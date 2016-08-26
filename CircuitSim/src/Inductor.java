@@ -12,4 +12,7 @@ public class Inductor {
 		this.id = id;
 	}
 
+	public void insertStamp(){
+		
+	}
 }

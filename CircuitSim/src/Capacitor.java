@@ -15,5 +15,4 @@ public class Capacitor {
 	public void insertStamp(){
 		
 	}
-
 }
