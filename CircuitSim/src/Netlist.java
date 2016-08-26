@@ -25,7 +25,7 @@ public class Netlist {
 		}
 		catch(IOException e){
 			System.out.println(e);
-			Main.usage(2);
+			Utilities.usage(2);
 		}
 	}
 	
@@ -65,14 +65,13 @@ public class Netlist {
 	
 	private static Object parseLine(String nextLine){
 		String[] tokens = nextLine.split("\\s+");
-		int tempId = Integer.parseInt(tokens[0].substring(1));
 		switch(tokens[0].toLowerCase().charAt(0)){
 			case 'r':
-				return new Resistor(Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Double.parseDouble(tokens[3]), tempId);
+				return new Resistor(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
 			case 'c':
-				return new Capacitor(Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Double.parseDouble(tokens[3]), tempId);
+				return new Capacitor(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
 			case 'l':
-				return new Inductor(Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), Double.parseDouble(tokens[3]), tempId);
+				return new Inductor(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
 			/*
 			 * TODO
 			 * 
@@ -95,10 +94,56 @@ public class Netlist {
 			case 'm':
 			*/
 			default:
-				Main.usage(3);
+				Utilities.usage(3);
 				System.exit(-1);
 				break;
 		}
 		return null;
+	}
+
+	private static double convert(String token) {
+		if(Utilities.isNumeric(token)){
+			return Double.parseDouble(token);
+		}
+		else{
+			//there should be a trailing modifier after the number
+			/*
+			F	E-15	femto
+			P	E-12	pico
+			N	E-9		nano
+			U	E-6		micro
+			M	E-3		milli
+			K	E+3		kilo
+			MEG E+6 	mega
+			G 	E+9 	giga
+			T 	E+12 	tera
+			 */
+			
+			String[] value = Utilities.splitString(token);
+			double baseNum = Double.parseDouble(value[0]);
+			
+			switch(value[1].toLowerCase()){
+				case "f":
+					return baseNum *= Math.pow(10, -15);
+				case "p":
+					return baseNum *= Math.pow(10, -12);
+				case "n":
+					return baseNum *= Math.pow(10, -9);
+				case "u":
+					return baseNum *= Math.pow(10, -6);
+				case "m":
+					return baseNum *= Math.pow(10, -3);
+				case "k":
+					return baseNum *= Math.pow(10, 3);
+				case "meg":
+					return baseNum *= Math.pow(10, 6);
+				case "g":
+					return baseNum *= Math.pow(10, 9);
+				case "t":
+					return baseNum *= Math.pow(10, 12);
+				default:
+					return 0;
+			}
+		}
 	}
 }

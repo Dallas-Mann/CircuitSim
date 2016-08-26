@@ -1,11 +1,11 @@
 
 public class Resistor {
+	String id;
 	int nodeOne;
 	int nodeTwo;
 	double resistance;
-	int id;
 	
-	public Resistor(int nodeOne, int nodeTwo, double resistance, int id){
+	public Resistor(String id, int nodeOne, int nodeTwo, double resistance){
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.resistance = resistance;

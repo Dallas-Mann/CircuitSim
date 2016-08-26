@@ -1,11 +1,12 @@
 
 public class Capacitor {
+	String id;
 	int nodeOne;
 	int nodeTwo;
 	double capacitance;
-	int id;
 	
-	public Capacitor(int nodeOne, int nodeTwo, double capacitance, int id){
+	
+	public Capacitor(String id, int nodeOne, int nodeTwo, double capacitance){
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.capacitance = capacitance;
