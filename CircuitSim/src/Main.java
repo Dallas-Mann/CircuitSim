@@ -1,5 +1,3 @@
-//imports
-//import java.util.regex.Pattern;
 
 public class Main {
 	
@@ -11,5 +9,6 @@ public class Main {
 		Netlist netlist = new Netlist();
 		netlist.readNetlist(args[0]);
 		netlist.prettyPrint();
+		netlist.populateMatricies();
 	}
 }

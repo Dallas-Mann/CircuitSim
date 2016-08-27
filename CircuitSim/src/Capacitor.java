@@ -1,5 +1,5 @@
 
-public class Capacitor {
+public class Capacitor implements Component{
 	String id;
 	int nodeOne;
 	int nodeTwo;
@@ -16,8 +16,10 @@ public class Capacitor {
 	public String toString(){
 		return id + " " + nodeOne + " " + nodeTwo + " " + capacitance;
 	}
-	
-	public void insertStamp(){
+
+	@Override
+	public void insertStamp() {
+		// TODO Auto-generated method stub
 		
 	}
 }

@@ -1,5 +1,5 @@
 
-public class Inductor {
+public class Inductor implements Component{
 	String id;
 	int nodeOne;
 	int nodeTwo;
@@ -15,8 +15,10 @@ public class Inductor {
 	public String toString(){
 		return id + " " + nodeOne + " " + nodeTwo + " " + inductance;
 	}
-	
-	public void insertStamp(){
+
+	@Override
+	public void insertStamp() {
+		// TODO Auto-generated method stub
 		
 	}
 }

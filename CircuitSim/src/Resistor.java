@@ -1,5 +1,5 @@
 
-public class Resistor {
+public class Resistor implements Component{
 	String id;
 	int nodeOne;
 	int nodeTwo;
@@ -15,8 +15,10 @@ public class Resistor {
 	public String toString(){
 		return id + " " + nodeOne + " " + nodeTwo + " " + resistance;
 	}
-	
-	public void insertStamp(){
+
+	@Override
+	public void insertStamp() {
+		// TODO Auto-generated method stub
 		
 	}
 }

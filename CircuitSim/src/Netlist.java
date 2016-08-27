@@ -3,14 +3,26 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+
+import org.ejml.simple.*;
+
+
 
 public class Netlist {
-	protected ArrayList<Object> circuitElements;
-	protected BufferedReader fileReader;
+	private List<Component> circuitElements;
+	private BufferedReader fileReader;
+	// using EJML for matrix manipulation
+	// Modified Nodal Analysis equation we wish to solve:
+	// [G][X] + [C] d[X]/dt = [B]
+	private SimpleMatrix G;
+	private SimpleMatrix X;
+	private SimpleMatrix C;
+	private SimpleMatrix B;
 	
 	public Netlist(){
 		//initialize arraylist of circuit elements
-		circuitElements = new ArrayList<Object>();
+		circuitElements = new ArrayList<Component>();
 	}
 	
 	protected void readNetlist(String fileName) {
@@ -64,7 +76,7 @@ public class Netlist {
     Current-Controlled switch W
 */
 	
-	private static Object parseLine(String nextLine){
+	private static Component parseLine(String nextLine){
 		String[] tokens = nextLine.split("\\s+");
 		switch(tokens[0].toLowerCase().charAt(0)){
 			case 'r':
@@ -149,8 +161,14 @@ public class Netlist {
 	}
 	
 	public void prettyPrint(){
-		for(Object i : circuitElements){
-			System.out.println(i.toString());
+		for(Component c : circuitElements){
+			System.out.println(c.toString());
+		}
+	}
+
+	public void populateMatricies() {
+		for(Component c : circuitElements){
+			c.insertStamp();
 		}
 	}
 }
