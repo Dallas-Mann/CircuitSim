@@ -18,10 +18,11 @@ public class Netlist {
 			fileReader = new BufferedReader(new FileReader(new File(fileName)));
 			String nextLine = fileReader.readLine();
 			while(!nextLine.toLowerCase().equals(".end")){
-				System.out.println(nextLine);
+				//System.out.println(nextLine);
 				circuitElements.add(parseLine(nextLine));
 				nextLine = fileReader.readLine();
 			}
+			fileReader.close();
 		}
 		catch(IOException e){
 			System.out.println(e);
@@ -144,6 +145,12 @@ public class Netlist {
 				default:
 					return 0;
 			}
+		}
+	}
+	
+	public void prettyPrint(){
+		for(Object i : circuitElements){
+			System.out.println(i.toString());
 		}
 	}
 }

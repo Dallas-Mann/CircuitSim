@@ -13,6 +13,10 @@ public class Capacitor {
 		this.id = id;
 	}
 	
+	public String toString(){
+		return id + " " + nodeOne + " " + nodeTwo + " " + capacitance;
+	}
+	
 	public void insertStamp(){
 		
 	}

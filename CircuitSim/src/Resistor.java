@@ -12,6 +12,10 @@ public class Resistor {
 		this.id = id;
 	}
 	
+	public String toString(){
+		return id + " " + nodeOne + " " + nodeTwo + " " + resistance;
+	}
+	
 	public void insertStamp(){
 		
 	}

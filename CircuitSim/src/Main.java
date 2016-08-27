@@ -7,9 +7,9 @@ public class Main {
 		if(0 >= args.length || args.length > 1){
 			Utilities.usage(1);
 		}
-		else{
-			Netlist netlist = new Netlist();
-			netlist.readNetlist(args[0]);
-		}
+		
+		Netlist netlist = new Netlist();
+		netlist.readNetlist(args[0]);
+		netlist.prettyPrint();
 	}
 }

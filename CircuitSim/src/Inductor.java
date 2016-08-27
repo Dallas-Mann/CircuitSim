@@ -11,7 +11,11 @@ public class Inductor {
 		this.inductance = inductance;
 		this.id = id;
 	}
-
+	
+	public String toString(){
+		return id + " " + nodeOne + " " + nodeTwo + " " + inductance;
+	}
+	
 	public void insertStamp(){
 		
 	}
