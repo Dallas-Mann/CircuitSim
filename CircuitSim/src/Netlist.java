@@ -11,7 +11,6 @@ import org.ejml.simple.*;
 
 public class Netlist {
 	private List<Component> circuitElements;
-	private BufferedReader fileReader;
 	// using EJML for matrix manipulation
 	// Modified Nodal Analysis equation we wish to solve:
 	// [G][X] + [C] d[X]/dt = [B]
@@ -21,13 +20,17 @@ public class Netlist {
 	private SimpleMatrix B;
 	
 	public Netlist(){
-		//initialize arraylist of circuit elements
+		//initialize arraylist of circuit elements and SimpleMatrices
 		circuitElements = new ArrayList<Component>();
+		G = new SimpleMatrix(2, 2);
+		X = new SimpleMatrix(2, 2);
+		C = new SimpleMatrix(2, 2);
+		B = new SimpleMatrix(2, 2);
 	}
 	
 	protected void readNetlist(String fileName) {
 		try{
-			fileReader = new BufferedReader(new FileReader(new File(fileName)));
+			BufferedReader fileReader = new BufferedReader(new FileReader(new File(fileName)));
 			String nextLine = fileReader.readLine();
 			while(!nextLine.toLowerCase().equals(".end")){
 				//System.out.println(nextLine);
@@ -168,7 +171,7 @@ public class Netlist {
 
 	public void populateMatricies() {
 		for(Component c : circuitElements){
-			c.insertStamp();
+			c.insertStamp(G, X, C, B);
 		}
 	}
 }

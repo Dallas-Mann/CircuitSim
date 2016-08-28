@@ -1,3 +1,4 @@
+import org.ejml.simple.SimpleMatrix;
 
 public class Capacitor implements Component{
 	String id;
@@ -18,7 +19,7 @@ public class Capacitor implements Component{
 	}
 
 	@Override
-	public void insertStamp() {
+	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
 		// TODO Auto-generated method stub
 		
 	}
