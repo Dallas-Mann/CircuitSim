@@ -22,10 +22,14 @@ public class Netlist {
 	public Netlist(){
 		//initialize arraylist of circuit elements and SimpleMatrices
 		circuitElements = new ArrayList<Component>();
-		G = new SimpleMatrix(2, 2);
-		X = new SimpleMatrix(2, 2);
-		C = new SimpleMatrix(2, 2);
-		B = new SimpleMatrix(2, 2);
+		
+		// TODO need to calculate the size of these matrices when reading in the netlist
+		// Then create a method to initialize them to the correct size
+		// initializing to 5 right now to test component stamps
+		G = new SimpleMatrix(5, 5);
+		X = new SimpleMatrix(5, 5);
+		C = new SimpleMatrix(5, 5);
+		B = new SimpleMatrix(5, 5);
 	}
 	
 	protected void readNetlist(String fileName) {
@@ -62,7 +66,7 @@ public class Netlist {
     Bipolar transistor Q
     MOSFET M
 	
--->	Components not expected to implement
+-->	Components not currently expected to implement
 	
     Coupling K
     IGBT Z

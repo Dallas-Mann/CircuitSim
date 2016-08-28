@@ -20,10 +20,13 @@ public class Resistor implements Component{
 	@Override
 	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
 		// TODO Auto-generated method stub
-		//testing the set method for the SimpleMatrix below, not correct
-		//G.set(nodeOne, nodeTwo, G.get(nodeOne, nodeTwo) + (1.0/resistance));
+		double conductance = 1.0/resistance;
+		G.set(nodeOne, nodeOne, G.get(nodeOne, nodeOne) + conductance);
+		G.set(nodeTwo, nodeTwo, G.get(nodeTwo, nodeTwo) + conductance);
+		G.set(nodeOne, nodeTwo, G.get(nodeOne, nodeTwo) - conductance);
+		G.set(nodeTwo, nodeOne, G.get(nodeTwo, nodeOne) - conductance);
 		
 		// show changes in SimpleMatrix to debug
-		System.out.println(G.toString());
+		System.out.println("Inserted Element " + this.id + "\n" + G.toString());
 	}
 }
