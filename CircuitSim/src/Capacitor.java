@@ -1,10 +1,10 @@
 import org.ejml.simple.SimpleMatrix;
 
 public class Capacitor implements Component{
-	String id;
-	int nodeOne;
-	int nodeTwo;
-	double capacitance;
+	protected String id;
+	protected int nodeOne;
+	protected int nodeTwo;
+	protected double capacitance;
 	
 	
 	public Capacitor(String id, int nodeOne, int nodeTwo, double capacitance){
@@ -20,16 +20,33 @@ public class Capacitor implements Component{
 
 	@Override
 	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
-		// TODO Auto-generated method stub
-		C.set(nodeOne, nodeOne, C.get(nodeOne, nodeOne) + capacitance);
-		C.set(nodeTwo, nodeTwo, C.get(nodeTwo, nodeTwo) + capacitance);
-		C.set(nodeOne, nodeTwo, C.get(nodeOne, nodeTwo) - capacitance);
-		C.set(nodeTwo, nodeOne, C.get(nodeTwo, nodeOne) - capacitance);
-		
-		// I think I need to modify the X matrix as well
-		// will come back to this
-		
-		// show changes in SimpleMatrix to debug
+		// 0th node is ground node, and thus not implemented in our matrices
+		// because of this we need to offset all the matrix indices by -1
+		int indexOne = nodeOne-1;
+		int indexTwo = nodeTwo-1;
+		if(nodeOne == 0){
+			C.set(indexTwo, indexTwo, G.get(indexTwo, indexTwo) + capacitance);
+		}
+		else if(nodeTwo == 0){
+			C.set(indexOne, indexOne, G.get(indexOne, indexOne) + capacitance);
+		}
+		else{
+			C.set(indexOne, indexOne, G.get(indexOne, indexOne) + capacitance);
+			C.set(indexTwo, indexTwo, G.get(indexTwo, indexTwo) + capacitance);
+			C.set(indexOne, indexTwo, G.get(indexOne, indexTwo) - capacitance);
+			C.set(indexTwo, indexOne, G.get(indexTwo, indexOne) - capacitance);
+		}
+		// show changes in C Matrix to debug
 		System.out.println("Inserted Element " + this.id + "\n" + C.toString());
+	}
+
+	@Override
+	public int getNodeOne() {
+		return this.nodeOne;
+	}
+
+	@Override
+	public int getNodeTwo() {
+		return this.nodeTwo;
 	}
 }
