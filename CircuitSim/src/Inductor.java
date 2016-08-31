@@ -38,7 +38,7 @@ public class Inductor implements Component{
 			G.set(newIndex, indexOne, G.get(newIndex, indexOne) + 1);
 			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) - 1);
 		}
-		C.set(newIndex, newIndex, G.get(newIndex, newIndex) - inductance);
+		C.set(newIndex, newIndex, C.get(newIndex, newIndex) - inductance);
 		
 		// show changes in G Matrix to debug
 		System.out.println("Inserted Element " + this.id + "\n" + G.toString());
