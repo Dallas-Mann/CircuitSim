@@ -86,12 +86,12 @@ public class Netlist {
  	Resistor R
 	Capacitor C
 	Inductor L
+	Independent current source & stimulus I
+    Independent voltage source & stimulus V
     Voltage-controlled voltage source Voltage-controlled current source E
     Voltage-controlled voltage source Voltage-controlled current source G
     Current-controlled current source Current-controlled voltage source F
     Current-controlled current source Current-controlled voltage source H
-    Independent current source & stimulus I
-    Independent voltage source & stimulus V
     Diode D
     Bipolar transistor Q
     MOSFET M
@@ -128,13 +128,15 @@ public class Netlist {
 			case 'l':
 				newComponent = new Inductor(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
 				break;
-			/*
-			 * TODO
-			 * 
-			case 'e':
-				
-			case 'g':
-				
+			case 'v':
+				newComponent = new IndVoltageSource(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
+				break;
+			case 'i':
+				newComponent = new IndCurrentSource(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
+				break;
+				/*
+				 * TODO
+				 * 
 			case 'f':
 				
 			case 'h':
@@ -158,7 +160,7 @@ public class Netlist {
 		if(newNode(newComponent.getNodeOne(), newComponent.getNodeTwo())){
 			this.incrVoltages();
 		}
-		if(newComponent instanceof Inductor){
+		if(newComponent instanceof Inductor || newComponent instanceof IndVoltageSource){
 			this.incrCurrents();
 		}
 		return newComponent;
@@ -221,10 +223,17 @@ public class Netlist {
 	public void populateMatricies() {
 		// index is really numVoltages + 1 to start at new rows/columns augmented on matrices
 		// then we subtract 1 to offset the matrix indices starting at 0
+		// this is why we post increment the value numVoltages
+		// newIndex is the index where the new equations that were formed using MNA begin
+		// i.e. the index of the last voltage.
 		int newIndex = numVoltages;
 		for(Component c : circuitElements){
 			if(c instanceof Inductor){
 				((Inductor) c).newIndex = newIndex;
+				newIndex++;
+			}
+			else if(c instanceof IndVoltageSource){
+				((IndVoltageSource) c).newIndex = newIndex;
 				newIndex++;
 			}
 		}

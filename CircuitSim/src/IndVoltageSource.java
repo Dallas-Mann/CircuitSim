@@ -1,21 +1,21 @@
 import org.ejml.simple.SimpleMatrix;
 
-public class Inductor implements Component{
+public class IndVoltageSource implements Component{
 	protected String id;
 	protected int nodeOne;
 	protected int nodeTwo;
 	protected int newIndex;
-	protected double inductance;
+	protected double voltage;
 	
-	public Inductor(String id, int nodeOne, int nodeTwo, double inductance){
+	public IndVoltageSource(String id, int nodeOne, int nodeTwo, double voltage){
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
-		this.inductance = inductance;
+		this.voltage = voltage;
 		this.id = id;
 	}
 	
 	public String toString(){
-		return id + " " + nodeOne + " " + nodeTwo + " " + newIndex + " " + inductance;
+		return id + " " + nodeOne + " " + nodeTwo + " " + newIndex + " " + voltage;
 	}
 
 	@Override
@@ -38,10 +38,10 @@ public class Inductor implements Component{
 			G.set(newIndex, indexOne, G.get(newIndex, indexOne) + 1);
 			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) - 1);
 		}
-		C.set(newIndex, newIndex, C.get(newIndex, newIndex) - inductance);
+		B.set(newIndex, 0, B.get(newIndex, 0) + voltage);
 		
 		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id + "\n" + G.toString() + C.toString());
+		System.out.println("Inserted Element " + this.id + "\n" + G.toString() + B.toString());
 	}
 	
 	@Override
