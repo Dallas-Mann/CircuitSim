@@ -7,8 +7,6 @@ import java.util.List;
 
 import org.ejml.simple.*;
 
-
-
 public class Netlist {
 	private List<Component> circuitElements;
 	// using EJML for matrix manipulation
