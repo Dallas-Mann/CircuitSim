@@ -1,3 +1,5 @@
+import java.util.List;
+
 import org.ejml.simple.SimpleMatrix;
 
 public class Inductor implements Component{
@@ -45,11 +47,7 @@ public class Inductor implements Component{
 	}
 
 	@Override
-	public int numVoltagesToAdd(int numVoltages) {
-		if(nodeOne > numVoltages || nodeTwo > numVoltages){
-			return 1;
-		}
-		else
+	public int numVoltagesToAdd(List<Integer> nodes) {
 			return 0;
 	}
 	

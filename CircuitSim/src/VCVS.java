@@ -1,3 +1,5 @@
+import java.util.List;
+
 import org.ejml.simple.SimpleMatrix;
 
 public class VCVS implements Component{
@@ -13,8 +15,8 @@ public class VCVS implements Component{
 		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
-		this.nodeThree = nodeOne;
-		this.nodeFour = nodeTwo;
+		this.nodeThree = nodeThree;
+		this.nodeFour = nodeFour;
 		this.gain = gain;
 	}
 	
@@ -29,9 +31,8 @@ public class VCVS implements Component{
 	}
 
 	@Override
-	public int numVoltagesToAdd(int numVoltages) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int numVoltagesToAdd(List<Integer> nodes) {
+			return 0;
 	}
 	
 	@Override

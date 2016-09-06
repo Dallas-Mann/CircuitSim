@@ -9,6 +9,7 @@ import org.ejml.simple.*;
 
 public class Netlist {
 	private List<Component> circuitElements;
+	private List<Integer> nodes;
 	// using EJML for matrix manipulation
 	// Modified Nodal Analysis equation we wish to solve:
 	// [G][X] + [C] d[X]/dt = [B]
@@ -24,6 +25,10 @@ public class Netlist {
 	public Netlist(){
 		// our list of circuit elements and matrices to be populated
 		circuitElements = new ArrayList<Component>();
+		// list of nodes used to calculate number of voltages required in the matrix
+		nodes = new ArrayList<Integer>();
+		// have to initialize the list of nodes with the ground node numbered 0
+		nodes.add(0);
 		// numVoltages and numCurrents used to calculate size of matrices later
 		numVoltages = 0;
 		numCurrents = 0;
@@ -150,7 +155,7 @@ public class Netlist {
 				break;
 		}
 		
-		this.incrVoltages(newComponent.numVoltagesToAdd(numVoltages));
+		this.incrVoltages(newComponent.numVoltagesToAdd(nodes));
 		this.incrCurrents(newComponent.numCurrentsToAdd());
 		return newComponent;
 	}
