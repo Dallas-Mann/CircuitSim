@@ -8,7 +8,10 @@ public class Main {
 		
 		Netlist netlist = new Netlist();
 		netlist.readNetlist(args[0]);
+		
+		//verify the netlist was read in and show all the components.
 		netlist.prettyPrint();
+		
 		netlist.populateMatricies();
 		netlist.solve(args[1]);
 	}

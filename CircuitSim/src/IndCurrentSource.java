@@ -39,16 +39,6 @@ public class IndCurrentSource implements Component{
 	}
 
 	@Override
-	public int getNodeOne() {
-		return this.nodeOne;
-	}
-
-	@Override
-	public int getNodeTwo() {
-		return this.nodeTwo;
-	}
-
-	@Override
 	public int numVoltagesToAdd(int numVoltages) {
 		if(nodeOne > numVoltages || nodeTwo > numVoltages){
 			return 1;

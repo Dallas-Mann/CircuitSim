@@ -26,19 +26,7 @@ public class VCCS implements Component {
 		// TODO Auto-generated method stub
 
 	}
-
-	@Override
-	public int getNodeOne() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public int getNodeTwo() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
+	
 	@Override
 	public int numVoltagesToAdd(int numVoltages) {
 		// TODO Auto-generated method stub

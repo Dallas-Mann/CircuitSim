@@ -43,16 +43,6 @@ public class Inductor implements Component{
 		// show changes in G Matrix to debug
 		System.out.println("Inserted Element " + this.id + "\n" + G.toString() + C.toString());
 	}
-	
-	@Override
-	public int getNodeOne() {
-		return this.nodeOne;
-	}
-
-	@Override
-	public int getNodeTwo() {
-		return this.nodeTwo;
-	}
 
 	@Override
 	public int numVoltagesToAdd(int numVoltages) {

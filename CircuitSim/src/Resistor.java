@@ -41,16 +41,6 @@ public class Resistor implements Component{
 	}
 
 	@Override
-	public int getNodeOne() {
-		return nodeOne;
-	}
-
-	@Override
-	public int getNodeTwo() {
-		return nodeTwo;
-	}
-
-	@Override
 	public int numVoltagesToAdd(int numVoltages) {
 		if(nodeOne > numVoltages || nodeTwo > numVoltages){
 			return 1;
