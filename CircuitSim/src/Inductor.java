@@ -8,10 +8,10 @@ public class Inductor implements Component{
 	protected double inductance;
 	
 	public Inductor(String id, int nodeOne, int nodeTwo, double inductance){
+		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.inductance = inductance;
-		this.id = id;
 	}
 	
 	public String toString(){
@@ -52,5 +52,19 @@ public class Inductor implements Component{
 	@Override
 	public int getNodeTwo() {
 		return this.nodeTwo;
+	}
+
+	@Override
+	public int numVoltagesToAdd(int numVoltages) {
+		if(nodeOne > numVoltages || nodeTwo > numVoltages){
+			return 1;
+		}
+		else
+			return 0;
+	}
+	
+	@Override
+	public int numCurrentsToAdd() {
+		return 1;
 	}
 }

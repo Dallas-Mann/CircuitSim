@@ -34,20 +34,12 @@ public class Netlist {
 		B = new SimpleMatrix(0, 0);
 	}
 	
-	protected void incrVoltages(){
-		this.numVoltages++;
+	protected void incrVoltages(int amount){
+		this.numVoltages += amount;
 	}
 	
-	protected void incrCurrents(){
-		this.numCurrents++;
-	}
-	
-	protected boolean newNode(int nodeOne, int nodeTwo){
-		if(nodeOne > numVoltages || nodeTwo > numVoltages){
-			return true;
-		}
-		else
-			return false;
+	protected void incrCurrents(int amount){
+		this.numCurrents += amount;
 	}
 	
 	// resizes all the relevant matrices after reading in netlist
@@ -86,10 +78,10 @@ public class Netlist {
 	Inductor L
 	Independent current source & stimulus I
     Independent voltage source & stimulus V
-    Voltage-controlled voltage source Voltage-controlled current source E
-    Voltage-controlled voltage source Voltage-controlled current source G
-    Current-controlled current source Current-controlled voltage source F
-    Current-controlled current source Current-controlled voltage source H
+    Voltage-controlled voltage source E
+    Voltage-controlled current source G
+    Current-controlled voltage source F
+    Current-controlled current source H
     Diode D
     Bipolar transistor Q
     MOSFET M
@@ -116,29 +108,32 @@ public class Netlist {
 	private Component parseLine(String nextLine){
 		String[] tokens = nextLine.split("\\s+");
 		Component newComponent = null;
+		int nodeOne = Integer.parseInt(tokens[1]);
+		int nodeTwo = Integer.parseInt(tokens[2]);
 		switch(tokens[0].toLowerCase().charAt(0)){
 			case 'r':
-				newComponent = new Resistor(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
+				newComponent = new Resistor(tokens[0], nodeOne, nodeTwo, convert(tokens[3]));
 				break;
 			case 'c':
-				newComponent = new Capacitor(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
+				newComponent = new Capacitor(tokens[0], nodeOne, nodeTwo, convert(tokens[3]));
 				break;
 			case 'l':
-				newComponent = new Inductor(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
+				newComponent = new Inductor(tokens[0], nodeOne, nodeTwo, convert(tokens[3]));
 				break;
 			case 'v':
-				newComponent = new IndVoltageSource(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
+				newComponent = new IndVoltageSource(tokens[0], nodeOne, nodeTwo, convert(tokens[3]));
 				break;
 			case 'i':
-				newComponent = new IndCurrentSource(tokens[0], Integer.parseInt(tokens[1]), Integer.parseInt(tokens[2]), convert(tokens[3]));
+				newComponent = new IndCurrentSource(tokens[0], nodeOne, nodeTwo, convert(tokens[3]));
 				break;
+			case 'e':
+				newComponent = new VCVS(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]), convert(tokens[5]));
+				break;
+			case 'g':
+				newComponent = new VCCS(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]), convert(tokens[5]));
 				/*
 				 * TODO
 				 * 
-			case 'f':
-				
-			case 'h':
-				
 			case 'i':
 				
 			case 'v':
@@ -155,12 +150,8 @@ public class Netlist {
 				break;
 		}
 		
-		if(newNode(newComponent.getNodeOne(), newComponent.getNodeTwo())){
-			this.incrVoltages();
-		}
-		if(newComponent instanceof Inductor || newComponent instanceof IndVoltageSource){
-			this.incrCurrents();
-		}
+		this.incrVoltages(newComponent.numVoltagesToAdd(numVoltages));
+		this.incrCurrents(newComponent.numCurrentsToAdd());
 		return newComponent;
 	}
 
@@ -209,14 +200,6 @@ public class Netlist {
 			}
 		}
 	}
-	
-	public void prettyPrint(){
-		System.out.println("voltages: " + numVoltages + "\t currents: " + numCurrents);
-		for(Component c : circuitElements){
-			System.out.println(c.toString());
-		}
-		System.out.println();
-	}
 
 	public void populateMatricies() {
 		// index is really numVoltages + 1 to start at new rows/columns augmented on matrices
@@ -238,5 +221,17 @@ public class Netlist {
 		for(Component c : circuitElements){
 			c.insertStamp(G, X, C, B);
 		}
+	}
+	
+	public void solve(String fileName){
+		
+	}
+	
+	public void prettyPrint(){
+		System.out.println("voltages: " + numVoltages + "\t currents: " + numCurrents);
+		for(Component c : circuitElements){
+			System.out.println(c.toString());
+		}
+		System.out.println();
 	}
 }

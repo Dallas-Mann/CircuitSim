@@ -5,4 +5,6 @@ public interface Component {
 	public int getNodeOne();
 	public int getNodeTwo();
 	public String toString();
+	public int numVoltagesToAdd(int numVoltages);
+	public int numCurrentsToAdd();
 }

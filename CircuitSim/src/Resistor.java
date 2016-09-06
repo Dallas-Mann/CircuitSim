@@ -7,10 +7,10 @@ public class Resistor implements Component{
 	protected double resistance;
 	
 	public Resistor(String id, int nodeOne, int nodeTwo, double resistance){
+		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.resistance = resistance;
-		this.id = id;
 	}
 	
 	public String toString(){
@@ -48,5 +48,19 @@ public class Resistor implements Component{
 	@Override
 	public int getNodeTwo() {
 		return nodeTwo;
+	}
+
+	@Override
+	public int numVoltagesToAdd(int numVoltages) {
+		if(nodeOne > numVoltages || nodeTwo > numVoltages){
+			return 1;
+		}
+		else
+			return 0;
+	}
+
+	@Override
+	public int numCurrentsToAdd() {
+		return 0;
 	}
 }

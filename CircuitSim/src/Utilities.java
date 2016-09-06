@@ -31,7 +31,7 @@ public class Utilities {
 	public static void usage(int error){
 		switch (error){
 		case 1:
-			System.out.println("Correct usage is \"java runSimulation netList.cir\"");
+			System.out.println("Correct usage is \"java runSimulation input.txt output.txt\"");
 			break;
 		case 2:
 			System.out.println("Could not open or read file.");

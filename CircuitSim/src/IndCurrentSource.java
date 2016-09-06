@@ -7,10 +7,10 @@ public class IndCurrentSource implements Component{
 	protected double current;
 	
 	public IndCurrentSource(String id, int nodeOne, int nodeTwo, double current){
+		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.current = current;
-		this.id = id;
 	}
 	
 	public String toString(){
@@ -48,4 +48,17 @@ public class IndCurrentSource implements Component{
 		return this.nodeTwo;
 	}
 
+	@Override
+	public int numVoltagesToAdd(int numVoltages) {
+		if(nodeOne > numVoltages || nodeTwo > numVoltages){
+			return 1;
+		}
+		else
+			return 0;
+	}
+
+	@Override
+	public int numCurrentsToAdd() {
+		return 0;
+	}
 }

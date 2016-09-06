@@ -2,7 +2,7 @@
 public class Main {
 	
 	public static void main(String[] args) {
-		if(0 >= args.length || args.length > 1){
+		if(args.length != 2){
 			Utilities.usage(1);
 		}
 		
@@ -10,5 +10,6 @@ public class Main {
 		netlist.readNetlist(args[0]);
 		netlist.prettyPrint();
 		netlist.populateMatricies();
+		netlist.solve(args[1]);
 	}
 }

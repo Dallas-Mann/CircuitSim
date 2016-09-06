@@ -8,10 +8,10 @@ public class Capacitor implements Component{
 	
 	
 	public Capacitor(String id, int nodeOne, int nodeTwo, double capacitance){
+		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.capacitance = capacitance;
-		this.id = id;
 	}
 	
 	public String toString(){
@@ -48,5 +48,19 @@ public class Capacitor implements Component{
 	@Override
 	public int getNodeTwo() {
 		return this.nodeTwo;
+	}
+
+	@Override
+	public int numVoltagesToAdd(int numVoltages) {
+		if(nodeOne > numVoltages || nodeTwo > numVoltages){
+			return 1;
+		}
+		else
+			return 0;
+	}
+
+	@Override
+	public int numCurrentsToAdd() {
+		return 0;
 	}
 }
