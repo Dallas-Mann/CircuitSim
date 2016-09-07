@@ -32,36 +32,40 @@ public class OpAmp implements Component{
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
-		int indexThree = nodeThree-1;
-		/*
-		if(!(nodeOne == 0 || nodeTwo == 0)){
-			G.set(newIndex, indexOne, G.get(newIndex, indexOne) - gain);
-			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) + gain);
+		//int indexThree = nodeThree-1;
+		//might need the above index to put values at (indexThree,newIndex) and (newIndex,indexThree)
+		if(!(nodeOne == 0 || nodeThree == 0)){
+			G.set(newIndex, indexOne, G.get(newIndex, indexOne) - 1);
 		}
-		if(!(nodeThree == 0)){
-			G.set(newIndex, indexThree, G.get(newIndex, indexThree) + 1);
-			G.set(indexThree, newIndex, G.get(indexThree, newIndex) + 1);
-		}
-		if(!(nodeFour == 0)){
-			G.set(newIndex, indexFour, G.get(newIndex, indexFour) - 1);
-			G.set(indexFour, newIndex, G.get(indexFour, newIndex) - 1);
+		if(!(nodeTwo == 0 || nodeThree == 0)){
+			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) + 1);
 		}
 		
 		// show changes in G Matrix to debug
 		System.out.println("Inserted Element " + this.id + "\n" + G.toString() + C.toString());
-		*/
 	}
 
 	@Override
 	public int numVoltagesToAdd(List<Integer> nodes) {
-		// TODO Auto-generated method stub
-		return 0;
+		int val = 0;
+		if(!nodes.contains(nodeOne)){
+			nodes.add(nodeOne);
+			val++;
+		}
+		if(!nodes.contains(nodeTwo)){
+			nodes.add(nodeTwo);
+			val++;
+		}
+		if(!nodes.contains(nodeThree)){
+			nodes.add(nodeThree);
+			val++;
+		}
+		return val;
 	}
 
 	@Override
 	public int numCurrentsToAdd() {
-		// TODO Auto-generated method stub
-		return 0;
+		// always add a current equation because we are modeling the OpAmp as a VCVS
+		return 1;
 	}
-
 }
