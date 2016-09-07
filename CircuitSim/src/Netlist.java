@@ -205,24 +205,37 @@ public class Netlist {
 			}
 		}
 	}
-
-	public void populateMatricies() {
-		// index is really numVoltages + 1 to start at new rows/columns augmented on matrices
-		// then we subtract 1 to offset the matrix indices starting at 0
-		// this is why we post increment the value numVoltages
-		// newIndex is the index where the new equations that were formed using MNA begin
-		// i.e. the index of the last voltage.
+	
+	private void calculateNewIndicies(){
+		// this calculates the new indices for components that need to augment a matrix
+		// calculation of the new indices for components that need to use a 
+		// current equation had to wait until the number of voltage equations was known
+		// newIndex is really numVoltages + 1 to start at new rows/columns augmented on matrices
+		// then we subtract 1 to offset the fact that matrix indices start at 0
+		// this is why we post increment the value newIndex
 		int newIndex = numVoltages;
 		for(Component c : circuitElements){
 			if(c instanceof Inductor){
-				((Inductor) c).newIndex = newIndex;
-				newIndex++;
+				((Inductor) c).newIndex = newIndex++;
 			}
 			else if(c instanceof IndVoltageSource){
-				((IndVoltageSource) c).newIndex = newIndex;
-				newIndex++;
+				((IndVoltageSource) c).newIndex = newIndex++;
+			}
+			else if(c instanceof VCVS){
+				((VCVS) c).newIndex = newIndex++;
+			}
+			else if(c instanceof OpAmp){
+				((OpAmp) c).newIndex = newIndex++;
+			}
+			else if(c instanceof MutualInductance){
+				((MutualInductance) c).newIndexOne = newIndex++;
+				((MutualInductance) c).newIndexTwo = newIndex++;
 			}
 		}
+	}
+
+	public void populateMatricies() {
+		this.calculateNewIndicies();
 		for(Component c : circuitElements){
 			c.insertStamp(G, X, C, B);
 		}

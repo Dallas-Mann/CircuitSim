@@ -47,7 +47,6 @@ public class VCVS implements Component{
 		
 		// show changes in G Matrix to debug
 		System.out.println("Inserted Element " + this.id + "\n" + G.toString() + C.toString());
-		
 	}
 
 	@Override
