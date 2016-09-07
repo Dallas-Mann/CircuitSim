@@ -11,13 +11,19 @@ public class MutualInductance implements Component {
 	protected int nodeFour;
 	protected int newIndexOne;
 	protected int newIndexTwo;
+	protected double inductanceOne;
+	protected double inductanceTwo;
+	protected double inductanceCoupled;
 	
-	public MutualInductance(String id, int nodeOne, int nodeTwo, int nodeThree, int nodeFour){
+	public MutualInductance(String id, int nodeOne, int nodeTwo, int nodeThree, int nodeFour, double inductanceOne, double inductanceTwo, double inductanceCoupled){
 		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.nodeThree = nodeThree;
 		this.nodeFour = nodeFour;
+		this.inductanceOne = inductanceOne;
+		this.inductanceTwo = inductanceTwo;
+		this.inductanceCoupled = inductanceCoupled;
 	}
 	
 	public String toString(){
@@ -48,6 +54,10 @@ public class MutualInductance implements Component {
 			G.set(indexFour, newIndexOne, G.get(indexFour, newIndexOne) - 1);
 			G.set(newIndexOne, indexFour, G.get(newIndexOne, indexFour) - 1);
 		}
+		C.set(newIndexOne, newIndexOne, C.get(newIndexOne, newIndexOne) - inductanceOne);
+		C.set(newIndexTwo, newIndexTwo, C.get(newIndexTwo, newIndexTwo) - inductanceTwo);
+		C.set(newIndexOne, newIndexTwo, C.get(newIndexOne, newIndexTwo) - inductanceCoupled);
+		C.set(newIndexTwo, newIndexOne, C.get(newIndexTwo, newIndexOne) - inductanceCoupled);
 		
 		// show changes in G Matrix to debug
 		System.out.println("Inserted Element " + this.id + "\n" + G.toString());
