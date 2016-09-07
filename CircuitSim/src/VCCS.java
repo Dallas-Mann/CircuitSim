@@ -72,7 +72,6 @@ public class VCCS implements Component {
 
 	@Override
 	public int numCurrentsToAdd() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
