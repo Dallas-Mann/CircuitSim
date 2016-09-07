@@ -27,16 +27,16 @@ public class Capacitor implements Component{
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		if(nodeOne == 0){
-			C.set(indexTwo, indexTwo, G.get(indexTwo, indexTwo) + capacitance);
+			C.set(indexTwo, indexTwo, C.get(indexTwo, indexTwo) + capacitance);
 		}
 		else if(nodeTwo == 0){
-			C.set(indexOne, indexOne, G.get(indexOne, indexOne) + capacitance);
+			C.set(indexOne, indexOne, C.get(indexOne, indexOne) + capacitance);
 		}
 		else{
-			C.set(indexOne, indexOne, G.get(indexOne, indexOne) + capacitance);
-			C.set(indexTwo, indexTwo, G.get(indexTwo, indexTwo) + capacitance);
-			C.set(indexOne, indexTwo, G.get(indexOne, indexTwo) - capacitance);
-			C.set(indexTwo, indexOne, G.get(indexTwo, indexOne) - capacitance);
+			C.set(indexOne, indexOne, C.get(indexOne, indexOne) + capacitance);
+			C.set(indexTwo, indexTwo, C.get(indexTwo, indexTwo) + capacitance);
+			C.set(indexOne, indexTwo, C.get(indexOne, indexTwo) - capacitance);
+			C.set(indexTwo, indexOne, C.get(indexTwo, indexOne) - capacitance);
 		}
 		// show changes in C Matrix to debug
 		System.out.println("Inserted Element " + this.id + "\n" + C.toString());
@@ -44,7 +44,16 @@ public class Capacitor implements Component{
 
 	@Override
 	public int numVoltagesToAdd(List<Integer> nodes) {
-			return 0;
+		int val = 0;
+		if(!nodes.contains(nodeOne)){
+			nodes.add(nodeOne);
+			val++;
+		}
+		if(!nodes.contains(nodeTwo)){
+			nodes.add(nodeTwo);
+			val++;
+		}
+		return val;
 	}
 
 	@Override

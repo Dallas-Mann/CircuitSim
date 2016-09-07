@@ -44,7 +44,16 @@ public class Resistor implements Component{
 
 	@Override
 	public int numVoltagesToAdd(List<Integer> nodes) {
-			return 0;
+		int val = 0;
+		if(!nodes.contains(nodeOne)){
+			nodes.add(nodeOne);
+			val++;
+		}
+		if(!nodes.contains(nodeTwo)){
+			nodes.add(nodeTwo);
+			val++;
+		}
+		return val;
 	}
 
 	@Override

@@ -26,18 +26,12 @@ public class IndVoltageSource implements Component{
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
-		if(nodeOne == 0){
-			G.set(indexTwo, newIndex, G.get(indexTwo, indexTwo) - 1);
-			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) - 1);
-		}
-		else if(nodeTwo == 0){
+		if(!(nodeOne == 0)){
 			G.set(indexOne, newIndex, G.get(indexOne, newIndex) + 1);
 			G.set(newIndex, indexOne, G.get(newIndex, indexOne) + 1);
 		}
-		else{
-			G.set(indexOne, newIndex, G.get(indexOne, newIndex) + 1);
+		if(!(nodeTwo == 0)){
 			G.set(indexTwo, newIndex, G.get(indexTwo, indexTwo) - 1);
-			G.set(newIndex, indexOne, G.get(newIndex, indexOne) + 1);
 			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) - 1);
 		}
 		B.set(newIndex, 0, B.get(newIndex, 0) + voltage);
@@ -48,11 +42,21 @@ public class IndVoltageSource implements Component{
 
 	@Override
 	public int numVoltagesToAdd(List<Integer> nodes) {
-			return 0;
+		int val = 0;
+		if(!nodes.contains(nodeOne)){
+			nodes.add(nodeOne);
+			val++;
+		}
+		if(!nodes.contains(nodeTwo)){
+			nodes.add(nodeTwo);
+			val++;
+		}
+		return val;
 	}
 
 	@Override
 	public int numCurrentsToAdd() {
+		// dependent voltage source always adds a current equation to the G matrix
 		return 1;
 	}
 }

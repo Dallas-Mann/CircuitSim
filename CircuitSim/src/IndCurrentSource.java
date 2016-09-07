@@ -25,14 +25,10 @@ public class IndCurrentSource implements Component{
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
-		if(nodeOne == 0){
-			B.set(indexTwo, 0, B.get(indexTwo, 0) + current);
-		}
-		else if(nodeTwo == 0){
+		if(!(nodeOne == 0)){
 			B.set(indexOne, 0, B.get(indexOne, 0) - current);
 		}
-		else{
-			B.set(indexOne, 0, B.get(indexOne, 0) - current);
+		if(!(nodeTwo == 0)){
 			B.set(indexTwo, 0, B.get(indexTwo, 0) + current);
 		}
 		
@@ -42,7 +38,16 @@ public class IndCurrentSource implements Component{
 
 	@Override
 	public int numVoltagesToAdd(List<Integer> nodes) {
-			return 0;
+		int val = 0;
+		if(!nodes.contains(nodeOne)){
+			nodes.add(nodeOne);
+			val++;
+		}
+		if(!nodes.contains(nodeTwo)){
+			nodes.add(nodeTwo);
+			val++;
+		}
+		return val;
 	}
 
 	@Override
