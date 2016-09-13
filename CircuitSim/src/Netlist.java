@@ -255,7 +255,9 @@ public class Netlist {
 	}
 	
 	public void solve(String fileName){
-		
+		// will need to take in a filename and the type of solution
+		// e.g. frequency, time, transient etc.
+		// once a solution is found print out the current state of all matrices
 	}
 	
 	public void prettyPrint(){
