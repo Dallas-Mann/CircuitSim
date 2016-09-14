@@ -32,8 +32,13 @@ public class OpAmp implements Component{
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
-		//int indexThree = nodeThree-1;
-		//might need the above index to put values at (indexThree,newIndex) and (newIndex,indexThree)
+		
+		// clear row because we will divide it by the infinite gain
+		for(int tempIndex = 0; tempIndex < G.numCols(); tempIndex++){
+			G.setRow(newIndex, tempIndex, 0);
+		}
+		
+		// the gain divided by itself will result in -1 or 1
 		if(!(nodeOne == 0 || nodeThree == 0)){
 			G.set(newIndex, indexOne, G.get(newIndex, indexOne) - 1);
 		}
