@@ -86,7 +86,7 @@ public class Netlist{
 	
 	/*  		
 	Letter codes for different circuit elements
--->	Components expected to implement
+-->	Components implemented
 	
  	Resistor R
 	Capacitor C
@@ -95,15 +95,17 @@ public class Netlist{
     Independent voltage source & stimulus V
     Voltage-controlled voltage source E
     Voltage-controlled current source G
-    Current-controlled voltage source F
+    Mutual Inductance/Coupling K
+    
+
+	
+-->	Components not currently implemented
+
+	Current-controlled voltage source F
     Current-controlled current source H
     Diode D
     Bipolar transistor Q
     MOSFET M
-	
--->	Components not currently expected to implement
-	
-    Coupling K
     IGBT Z
     Junction FET J
     GaAsFET B
@@ -116,7 +118,7 @@ public class Netlist{
     Transmission line coupling K
     Voltage-Controlled switch S
     Current-Controlled switch W
-*/
+	 */
 	// reads in a component at a time
 	// also adjusts number of voltages/currents depending on the component for later use
 	// these voltages and currents will be used to adjust the matrix sizes
@@ -142,10 +144,21 @@ public class Netlist{
 				newComponent = new IndCurrentSource(tokens[0], nodeOne, nodeTwo, convert(tokens[3]));
 				break;
 			case 'e':
-				newComponent = new VCVS(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]), convert(tokens[5]));
+				newComponent = new VCVS(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), 
+						Integer.parseInt(tokens[4]), convert(tokens[5]));
 				break;
 			case 'g':
-				newComponent = new VCCS(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), Integer.parseInt(tokens[4]), convert(tokens[5]));
+				newComponent = new VCCS(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), 
+						Integer.parseInt(tokens[4]), convert(tokens[5]));
+				break;
+			case 'k':
+				newComponent = new MutualInductance(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), 
+						Integer.parseInt(tokens[4]), convert(tokens[5]), convert(tokens[6]), convert(tokens[7]));
+				break;
+			case 'o':
+				newComponent = new OpAmp(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), 
+						convert(tokens[4]));
+				break;
 				/*
 				 * TODO
 				 * 
