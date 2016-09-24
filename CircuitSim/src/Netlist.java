@@ -282,8 +282,9 @@ public class Netlist{
 				// use default print method for CDenseMatrix64F
 				// have to assign stdout stream to file
 				System.setOut(writer);
-				writer.println(currentFreq + ": " );
+				writer.println("Frequency: " + currentFreq);
 				X.print();
+				writer.println();
 				// next step, increase frequency
 				currentFreq += stepSize;
 			}
