@@ -1,6 +1,6 @@
 import java.util.List;
 
-import org.ejml.simple.SimpleMatrix;
+import org.ejml.data.CDenseMatrix64F;
 
 public class Resistor implements Component{
 	protected String id;
@@ -20,26 +20,30 @@ public class Resistor implements Component{
 	}
 
 	@Override
-	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
+	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
 		double conductance = 1.0/resistance;
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		if(nodeOne == 0){
-			G.set(indexTwo, indexTwo, G.get(indexTwo, indexTwo) + conductance);
+			G.setReal(indexTwo, indexTwo, G.getReal(indexTwo, indexTwo) + conductance);
 		}
 		else if(nodeTwo == 0){
-			G.set(indexOne, indexOne, G.get(indexOne, indexOne) + conductance);
+			G.setReal(indexOne, indexOne, G.getReal(indexOne, indexOne) + conductance);
 		}
 		else{
-			G.set(indexOne, indexOne, G.get(indexOne, indexOne) + conductance);
-			G.set(indexTwo, indexTwo, G.get(indexTwo, indexTwo) + conductance);
-			G.set(indexOne, indexTwo, G.get(indexOne, indexTwo) - conductance);
-			G.set(indexTwo, indexOne, G.get(indexTwo, indexOne) - conductance);
+			G.setReal(indexOne, indexOne, G.getReal(indexOne, indexOne) + conductance);
+			G.setReal(indexTwo, indexTwo, G.getReal(indexTwo, indexTwo) + conductance);
+			G.setReal(indexOne, indexTwo, G.getReal(indexOne, indexTwo) - conductance);
+			G.setReal(indexTwo, indexOne, G.getReal(indexTwo, indexOne) - conductance);
 		}
+		
+		/*
 		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id + "\n" + G.toString());
+		System.out.println("Inserted Element " + this.id);
+		G.print();
+		*/
 	}
 
 	@Override

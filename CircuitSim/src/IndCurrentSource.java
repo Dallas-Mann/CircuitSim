@@ -1,6 +1,6 @@
 import java.util.List;
 
-import org.ejml.simple.SimpleMatrix;
+import org.ejml.data.CDenseMatrix64F;
 
 public class IndCurrentSource implements Component{
 	protected String id;
@@ -20,20 +20,23 @@ public class IndCurrentSource implements Component{
 	}
 
 	@Override
-	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
+	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		if(!(nodeOne == 0)){
-			B.set(indexOne, 0, B.get(indexOne, 0) - current);
+			B.setReal(indexOne, 0, B.getReal(indexOne, 0) - current);
 		}
 		if(!(nodeTwo == 0)){
-			B.set(indexTwo, 0, B.get(indexTwo, 0) + current);
+			B.setReal(indexTwo, 0, B.getReal(indexTwo, 0) + current);
 		}
 		
+		/*
 		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id + "\n" + B.toString());
+		System.out.println("Inserted Element " + this.id);
+		B.print();
+		*/
 	}
 
 	@Override

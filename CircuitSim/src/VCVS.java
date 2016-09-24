@@ -1,6 +1,6 @@
 import java.util.List;
 
-import org.ejml.simple.SimpleMatrix;
+import org.ejml.data.CDenseMatrix64F;
 
 public class VCVS implements Component{
 	protected String id;
@@ -25,7 +25,7 @@ public class VCVS implements Component{
 	}
 	
 	@Override
-	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
+	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
@@ -33,20 +33,24 @@ public class VCVS implements Component{
 		int indexThree = nodeThree-1;
 		int indexFour = nodeFour-1;
 		if(!(nodeOne == 0 || nodeTwo == 0)){
-			G.set(newIndex, indexOne, G.get(newIndex, indexOne) - gain);
-			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) + gain);
+			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) - gain);
+			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) + gain);
 		}
 		if(!(nodeThree == 0)){
-			G.set(newIndex, indexThree, G.get(newIndex, indexThree) + 1);
-			G.set(indexThree, newIndex, G.get(indexThree, newIndex) + 1);
+			G.setReal(newIndex, indexThree, G.getReal(newIndex, indexThree) + 1);
+			G.setReal(indexThree, newIndex, G.getReal(indexThree, newIndex) + 1);
 		}
 		if(!(nodeFour == 0)){
-			G.set(newIndex, indexFour, G.get(newIndex, indexFour) - 1);
-			G.set(indexFour, newIndex, G.get(indexFour, newIndex) - 1);
+			G.setReal(newIndex, indexFour, G.getReal(newIndex, indexFour) - 1);
+			G.setReal(indexFour, newIndex, G.getReal(indexFour, newIndex) - 1);
 		}
 		
+		/*
 		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id + "\n" + G.toString() + C.toString());
+		System.out.println("Inserted Element " + this.id);
+		G.print();
+		C.print();
+		*/
 	}
 
 	@Override

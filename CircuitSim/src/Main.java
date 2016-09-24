@@ -1,7 +1,7 @@
 
 public class Main {
 	
-	public static void main(String[] args) {
+	public static void main(String[] args){
 		if(args.length != 2){
 			Utilities.usage(1);
 		}
@@ -13,6 +13,6 @@ public class Main {
 		netlist.prettyPrint();
 		
 		netlist.populateMatricies();
-		netlist.solve(args[1]);
+		netlist.solveFrequency(args[1]);
 	}
 }

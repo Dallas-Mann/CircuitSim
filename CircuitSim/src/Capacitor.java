@@ -1,6 +1,6 @@
 import java.util.List;
 
-import org.ejml.simple.SimpleMatrix;
+import org.ejml.data.CDenseMatrix64F;
 
 public class Capacitor implements Component{
 	protected String id;
@@ -21,25 +21,29 @@ public class Capacitor implements Component{
 	}
 
 	@Override
-	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
+	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		if(nodeOne == 0){
-			C.set(indexTwo, indexTwo, C.get(indexTwo, indexTwo) + capacitance);
+			C.setImaginary(indexTwo, indexTwo, C.getImaginary(indexTwo, indexTwo) + capacitance);
 		}
 		else if(nodeTwo == 0){
-			C.set(indexOne, indexOne, C.get(indexOne, indexOne) + capacitance);
+			C.setImaginary(indexOne, indexOne, C.getImaginary(indexOne, indexOne) + capacitance);
 		}
 		else{
-			C.set(indexOne, indexOne, C.get(indexOne, indexOne) + capacitance);
-			C.set(indexTwo, indexTwo, C.get(indexTwo, indexTwo) + capacitance);
-			C.set(indexOne, indexTwo, C.get(indexOne, indexTwo) - capacitance);
-			C.set(indexTwo, indexOne, C.get(indexTwo, indexOne) - capacitance);
+			C.setImaginary(indexOne, indexOne, C.getImaginary(indexOne, indexOne) + capacitance);
+			C.setImaginary(indexTwo, indexTwo, C.getImaginary(indexTwo, indexTwo) + capacitance);
+			C.setImaginary(indexOne, indexTwo, C.getImaginary(indexOne, indexTwo) - capacitance);
+			C.setImaginary(indexTwo, indexOne, C.getImaginary(indexTwo, indexOne) - capacitance);
 		}
+		
+		/*
 		// show changes in C Matrix to debug
-		System.out.println("Inserted Element " + this.id + "\n" + C.toString());
+		System.out.println("Inserted Element " + this.id);
+		C.print();
+		*/
 	}
 
 	@Override

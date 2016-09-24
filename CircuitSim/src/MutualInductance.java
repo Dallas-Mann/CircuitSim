@@ -1,6 +1,6 @@
 import java.util.List;
 
-import org.ejml.simple.SimpleMatrix;
+import org.ejml.data.CDenseMatrix64F;
 
 public class MutualInductance implements Component {
 
@@ -31,7 +31,7 @@ public class MutualInductance implements Component {
 	}
 	
 	@Override
-	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
+	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
@@ -39,28 +39,31 @@ public class MutualInductance implements Component {
 		int indexThree = nodeThree-1;
 		int indexFour = nodeFour-1;
 		if(!(nodeOne == 0)){
-			G.set(indexOne, newIndexOne, G.get(indexOne, newIndexOne) + 1);
-			G.set(newIndexOne, indexOne, G.get(newIndexOne, indexOne) + 1);
+			G.setReal(indexOne, newIndexOne, G.getReal(indexOne, newIndexOne) + 1);
+			G.setReal(newIndexOne, indexOne, G.getReal(newIndexOne, indexOne) + 1);
 		}
 		if(!(nodeThree == 0)){
-			G.set(indexThree, newIndexOne, G.get(indexThree, newIndexOne) + 1);
-			G.set(newIndexOne, indexThree, G.get(newIndexOne, indexThree) + 1);
+			G.setReal(indexThree, newIndexOne, G.getReal(indexThree, newIndexOne) + 1);
+			G.setReal(newIndexOne, indexThree, G.getReal(newIndexOne, indexThree) + 1);
 		}
 		if(!(nodeTwo == 0)){
-			G.set(indexTwo, newIndexOne, G.get(indexTwo, newIndexOne) - 1);
-			G.set(newIndexOne, indexTwo, G.get(newIndexOne, indexTwo) - 1);
+			G.setReal(indexTwo, newIndexOne, G.getReal(indexTwo, newIndexOne) - 1);
+			G.setReal(newIndexOne, indexTwo, G.getReal(newIndexOne, indexTwo) - 1);
 		}
 		if(!(nodeFour == 0)){
-			G.set(indexFour, newIndexOne, G.get(indexFour, newIndexOne) - 1);
-			G.set(newIndexOne, indexFour, G.get(newIndexOne, indexFour) - 1);
+			G.setReal(indexFour, newIndexOne, G.getReal(indexFour, newIndexOne) - 1);
+			G.setReal(newIndexOne, indexFour, G.getReal(newIndexOne, indexFour) - 1);
 		}
-		C.set(newIndexOne, newIndexOne, C.get(newIndexOne, newIndexOne) - inductanceOne);
-		C.set(newIndexTwo, newIndexTwo, C.get(newIndexTwo, newIndexTwo) - inductanceTwo);
-		C.set(newIndexOne, newIndexTwo, C.get(newIndexOne, newIndexTwo) - inductanceCoupled);
-		C.set(newIndexTwo, newIndexOne, C.get(newIndexTwo, newIndexOne) - inductanceCoupled);
+		C.setImaginary(newIndexOne, newIndexOne, C.getImaginary(newIndexOne, newIndexOne) - inductanceOne);
+		C.setImaginary(newIndexTwo, newIndexTwo, C.getImaginary(newIndexTwo, newIndexTwo) - inductanceTwo);
+		C.setImaginary(newIndexOne, newIndexTwo, C.getImaginary(newIndexOne, newIndexTwo) - inductanceCoupled);
+		C.setImaginary(newIndexTwo, newIndexOne, C.getImaginary(newIndexTwo, newIndexOne) - inductanceCoupled);
 		
+		/*
 		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id + "\n" + G.toString());
+		System.out.println("Inserted Element " + this.id);
+		G.print();
+		*/
 	}
 
 	@Override

@@ -1,6 +1,6 @@
 import java.util.List;
 
-import org.ejml.simple.SimpleMatrix;
+import org.ejml.data.CDenseMatrix64F;
 
 public class OpAmp implements Component{
 	protected String id;
@@ -24,7 +24,7 @@ public class OpAmp implements Component{
 	}
 
 	@Override
-	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
+	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
 		// TODO Auto-generated method stub
 		// model the op amp as a voltange controlled voltage source at the output terminal and ground
 		// the two input terminals are the control+ and control- for the VCVS at the output.
@@ -35,14 +35,17 @@ public class OpAmp implements Component{
 		//int indexThree = nodeThree-1;
 		//might need the above index to put values at (indexThree,newIndex) and (newIndex,indexThree)
 		if(!(nodeOne == 0 || nodeThree == 0)){
-			G.set(newIndex, indexOne, G.get(newIndex, indexOne) - 1);
+			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) - 1);
 		}
 		if(!(nodeTwo == 0 || nodeThree == 0)){
-			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) + 1);
+			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) + 1);
 		}
 		
+		/*
 		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id + "\n" + G.toString());
+		System.out.println("Inserted Element " + this.id);
+		G.print();
+		*/
 	}
 
 	@Override

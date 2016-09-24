@@ -1,6 +1,6 @@
 import java.util.List;
 
-import org.ejml.simple.SimpleMatrix;
+import org.ejml.data.CDenseMatrix64F;
 
 public class Inductor implements Component{
 	protected String id;
@@ -21,23 +21,27 @@ public class Inductor implements Component{
 	}
 
 	@Override
-	public void insertStamp(SimpleMatrix G, SimpleMatrix X, SimpleMatrix C, SimpleMatrix B) {
+	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		if(!(nodeOne == 0)){
-			G.set(indexOne, newIndex, G.get(indexOne, newIndex) + 1);
-			G.set(newIndex, indexOne, G.get(newIndex, indexOne) + 1);
+			G.setReal(indexOne, newIndex, G.getReal(indexOne, newIndex) + 1);
+			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) + 1);
 		}
 		else if(!(nodeTwo == 0)){
-			G.set(indexTwo, newIndex, G.get(indexTwo, indexTwo) - 1);
-			G.set(newIndex, indexTwo, G.get(newIndex, indexTwo) - 1);
+			G.setReal(indexTwo, newIndex, G.getReal(indexTwo, indexTwo) - 1);
+			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) - 1);
 		}
-		C.set(newIndex, newIndex, C.get(newIndex, newIndex) - inductance);
+		C.setReal(newIndex, newIndex, C.getReal(newIndex, newIndex) - inductance);
 		
+		/*
 		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id + "\n" + G.toString() + C.toString());
+		System.out.println("Inserted Element " + this.id);
+		G.print();
+		C.print();
+		*/
 	}
 
 	@Override

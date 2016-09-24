@@ -2,21 +2,31 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.ejml.simple.*;
+import org.apache.commons.math3.complex.Complex;
+import org.ejml.data.CDenseMatrix64F;
+import org.ejml.factory.CLinearSolverFactory;
+import org.ejml.interfaces.linsol.LinearSolver;
+import org.ejml.ops.CCommonOps;
 
-public class Netlist {
+public class Netlist{
 	private List<Component> circuitElements;
 	private List<Integer> nodes;
 	// using EJML for matrix manipulation
 	// Modified Nodal Analysis equation we wish to solve:
 	// [G][X] + [C] d[X]/dt = [B]
-	private SimpleMatrix G;
-	private SimpleMatrix X;
-	private SimpleMatrix C;
-	private SimpleMatrix B;
+	private CDenseMatrix64F G;
+	private CDenseMatrix64F X;
+	private CDenseMatrix64F C;
+	private CDenseMatrix64F B;
+	
+	private double minFreq = 0;
+	private double maxFreq = 10000;
+	private int numSteps = 1000;
 	
 	// used to calculate matrix sizes before hand so we don't have to resize them repeatedly
 	private int numVoltages;
@@ -33,10 +43,10 @@ public class Netlist {
 		numVoltages = 0;
 		numCurrents = 0;
 		// for now initialize to zero
-		G = new SimpleMatrix(0, 0);
-		X = new SimpleMatrix(0, 0);
-		C = new SimpleMatrix(0, 0);
-		B = new SimpleMatrix(0, 0);
+		G = new CDenseMatrix64F(0, 0);
+		X = new CDenseMatrix64F(0, 0);
+		C = new CDenseMatrix64F(0, 0);
+		B = new CDenseMatrix64F(0, 0);
 	}
 	
 	protected void incrVoltages(int amount){
@@ -56,7 +66,7 @@ public class Netlist {
 		B.reshape(size, 1);
 	}
 	
-	protected void readNetlist(String fileName) {
+	protected void readNetlist(String fileName){
 		try{
 			BufferedReader fileReader = new BufferedReader(new FileReader(new File(fileName)));
 			String nextLine = fileReader.readLine();
@@ -160,7 +170,7 @@ public class Netlist {
 		return newComponent;
 	}
 
-	private static double convert(String token) {
+	private static double convert(String token){
 		if(Utilities.isNumeric(token)){
 			return Double.parseDouble(token);
 		}
@@ -234,15 +244,56 @@ public class Netlist {
 		}
 	}
 
-	public void populateMatricies() {
+	public void populateMatricies(){
 		this.calculateNewIndicies();
 		for(Component c : circuitElements){
 			c.insertStamp(G, X, C, B);
 		}
 	}
 	
-	public void solve(String fileName){
+	public void solveFrequency(String fileName){
+		double stepSize = (maxFreq - minFreq) / numSteps;
+		double currentFreq = minFreq;
 		
+		try{
+			PrintStream writer = new PrintStream(fileName);
+			PrintStream orig = System.out;
+			
+			// temp matrix to store (G + SC)
+			CDenseMatrix64F solution;
+			Complex s;
+			LinearSolver<CDenseMatrix64F> solver;
+			
+			for(int i = 0; i < numSteps; i++){
+				// copy C matrix into solution
+				solution = C.copy();
+				// create S for the current frequency
+				s = new Complex(0, 2 * Math.PI * currentFreq);
+				// multiply solution (C copy) by S for the current frequency
+				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary() , C);
+				// set solution to (G + SC)
+				CCommonOps.add(G, solution, solution);
+				// LU decomposition
+				solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+				// Solve for this frequency
+				solver.setA(solution);
+				solver.solve(B, X);
+				// write this solution to the output file
+				// use default print method for CDenseMatrix64F
+				// have to assign stdout stream to file
+				System.setOut(writer);
+				writer.println(currentFreq + ": " );
+				X.print();
+				// next step, increase frequency
+				currentFreq += stepSize;
+			}
+			System.setOut(orig);
+			writer.close();
+		}
+		catch (Exception e){
+			System.out.println("Couldn't write to file.");
+			System.out.println(e);
+		}
 	}
 	
 	public void prettyPrint(){
