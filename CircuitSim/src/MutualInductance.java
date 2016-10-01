@@ -54,10 +54,10 @@ public class MutualInductance implements Component {
 			G.setReal(indexFour, newIndexOne, G.getReal(indexFour, newIndexOne) - 1);
 			G.setReal(newIndexOne, indexFour, G.getReal(newIndexOne, indexFour) - 1);
 		}
-		C.setImaginary(newIndexOne, newIndexOne, C.getImaginary(newIndexOne, newIndexOne) - inductanceOne);
-		C.setImaginary(newIndexTwo, newIndexTwo, C.getImaginary(newIndexTwo, newIndexTwo) - inductanceTwo);
-		C.setImaginary(newIndexOne, newIndexTwo, C.getImaginary(newIndexOne, newIndexTwo) - inductanceCoupled);
-		C.setImaginary(newIndexTwo, newIndexOne, C.getImaginary(newIndexTwo, newIndexOne) - inductanceCoupled);
+		C.setReal(newIndexOne, newIndexOne, C.getReal(newIndexOne, newIndexOne) - inductanceOne);
+		C.setReal(newIndexTwo, newIndexTwo, C.getReal(newIndexTwo, newIndexTwo) - inductanceTwo);
+		C.setReal(newIndexOne, newIndexTwo, C.getReal(newIndexOne, newIndexTwo) - inductanceCoupled);
+		C.setReal(newIndexTwo, newIndexOne, C.getReal(newIndexTwo, newIndexOne) - inductanceCoupled);
 		
 		/*
 		// show changes in G Matrix to debug

@@ -11,8 +11,8 @@ public class Main {
 		
 		//verify the netlist was read in and show all the components.
 		netlist.prettyPrint();
-		
 		netlist.populateMatricies();
+		netlist.prettyPrintMatrices();
 		netlist.solveFrequency(args[1]);
 	}
 }

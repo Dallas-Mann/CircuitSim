@@ -24,7 +24,7 @@ public class Netlist{
 	private CDenseMatrix64F B;
 	
 	private double minFreq = 0;
-	private double maxFreq = 10000;
+	private double maxFreq = 100000;
 	private int numSteps = 1000;
 	
 	// used to calculate matrix sizes before hand so we don't have to resize them repeatedly
@@ -277,12 +277,12 @@ public class Netlist{
 			LinearSolver<CDenseMatrix64F> solver;
 			
 			for(int i = 0; i < numSteps; i++){
-				// copy C matrix into solution
-				solution = C.copy();
+				// initialize solution
+				solution = new CDenseMatrix64F(C.numCols, C.numRows);
 				// create S for the current frequency
 				s = new Complex(0, 2 * Math.PI * currentFreq);
-				// multiply solution (C copy) by S for the current frequency
-				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary() , C);
+				// set solution to S*C
+				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), solution);
 				// set solution to (G + SC)
 				CCommonOps.add(G, solution, solution);
 				// LU decomposition
@@ -315,5 +315,19 @@ public class Netlist{
 			System.out.println(c.toString());
 		}
 		System.out.println();
+	}
+	
+	public void prettyPrintMatrices(){
+		System.out.println("G Matrix");
+		G.print();
+		System.out.println();
+		System.out.println("X Matrix");
+		X.print();
+		System.out.println();
+		System.out.println("C Matrix");
+		C.print();
+		System.out.println();
+		System.out.println("B Matrix");
+		B.print();
 	}
 }

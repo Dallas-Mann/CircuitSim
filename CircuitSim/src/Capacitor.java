@@ -27,16 +27,16 @@ public class Capacitor implements Component{
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		if(nodeOne == 0){
-			C.setImaginary(indexTwo, indexTwo, C.getImaginary(indexTwo, indexTwo) + capacitance);
+			C.setReal(indexTwo, indexTwo, C.getReal(indexTwo, indexTwo) + capacitance);
 		}
 		else if(nodeTwo == 0){
-			C.setImaginary(indexOne, indexOne, C.getImaginary(indexOne, indexOne) + capacitance);
+			C.setReal(indexOne, indexOne, C.getReal(indexOne, indexOne) + capacitance);
 		}
 		else{
-			C.setImaginary(indexOne, indexOne, C.getImaginary(indexOne, indexOne) + capacitance);
-			C.setImaginary(indexTwo, indexTwo, C.getImaginary(indexTwo, indexTwo) + capacitance);
-			C.setImaginary(indexOne, indexTwo, C.getImaginary(indexOne, indexTwo) - capacitance);
-			C.setImaginary(indexTwo, indexOne, C.getImaginary(indexTwo, indexOne) - capacitance);
+			C.setReal(indexOne, indexOne, C.getReal(indexOne, indexOne) + capacitance);
+			C.setReal(indexTwo, indexTwo, C.getReal(indexTwo, indexTwo) + capacitance);
+			C.setReal(indexOne, indexTwo, C.getReal(indexOne, indexTwo) - capacitance);
+			C.setReal(indexTwo, indexOne, C.getReal(indexTwo, indexOne) - capacitance);
 		}
 		
 		/*
