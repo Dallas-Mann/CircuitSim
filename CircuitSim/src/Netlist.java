@@ -13,8 +13,14 @@ import org.ejml.interfaces.linsol.LinearSolver;
 import org.ejml.ops.CCommonOps;
 
 public class Netlist{
+	
+	public enum solutionType{
+		FREQ, DC, TIME
+	}
+	
 	private List<Component> circuitElements;
 	private List<Integer> nodes;
+	private List<solutionType> solutions;
 	// using EJML for matrix manipulation
 	// Modified Nodal Analysis equation we wish to solve:
 	// [G][X] + [C] d[X]/dt = [B]
@@ -24,7 +30,7 @@ public class Netlist{
 	private CDenseMatrix64F B;
 	
 	private double minFreq = 0;
-	private double maxFreq = 100000;
+	private double maxFreq = 10000;
 	private int numSteps = 1000;
 	
 	// used to calculate matrix sizes before hand so we don't have to resize them repeatedly
@@ -34,6 +40,8 @@ public class Netlist{
 	public Netlist(){
 		// our list of circuit elements and matrices to be populated
 		circuitElements = new ArrayList<Component>();
+		// list of solutions that need to be produced
+		solutions = new ArrayList<solutionType>();
 		// list of nodes used to calculate number of voltages required in the matrix
 		nodes = new ArrayList<Integer>();
 		// have to initialize the list of nodes with the ground node numbered 0
@@ -70,8 +78,7 @@ public class Netlist{
 			BufferedReader fileReader = new BufferedReader(new FileReader(new File(fileName)));
 			String nextLine = fileReader.readLine();
 			while(!nextLine.toLowerCase().equals(".end")){
-				//System.out.println(nextLine);
-				circuitElements.add(this.parseLine(nextLine));
+				this.parseLine(nextLine);
 				nextLine = fileReader.readLine();
 			}
 			fileReader.close();			
@@ -83,6 +90,30 @@ public class Netlist{
 		}
 	}
 	
+	private void parseLine(String nextLine){
+		String[] tokens = nextLine.split("\\s+");
+		if(tokens[0].charAt(0) == '.'){
+			switch(tokens[0].toLowerCase().substring(1)){
+				case "freq":
+					solutions.add(solutionType.FREQ);
+					break;
+				case "dc":
+					solutions.add(solutionType.DC);
+					break;
+				case "time":
+					solutions.add(solutionType.TIME);
+					break;
+			}
+		}
+		else if(tokens[0].charAt(0) == '#'){
+			// do nothing, it's a comment
+			return;
+		}
+		else{
+			circuitElements.add(this.parseComponent(nextLine));
+		}
+	}
+
 	/*  		
 	Letter codes for different circuit elements
 -->	Components implemented
@@ -121,7 +152,7 @@ public class Netlist{
 	// reads in a component at a time
 	// also adjusts number of voltages/currents depending on the component for later use
 	// these voltages and currents will be used to adjust the matrix sizes
-	private Component parseLine(String nextLine){
+	private Component parseComponent(String nextLine){
 		String[] tokens = nextLine.split("\\s+");
 		Component newComponent = null;
 		int nodeOne = Integer.parseInt(tokens[1]);
@@ -158,11 +189,13 @@ public class Netlist{
 				newComponent = new OpAmp(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), 
 						convert(tokens[4]));
 				break;
+			case 'a':
+				newComponent = new VAC(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
+						convert(tokens[4]), convert(tokens[5]), Integer.parseInt(tokens[6]));
+				break;
 				/*
 				 * TODO
 				 * 
-			case 'i':
-				
 			case 'v':
 				
 			case 'd':
@@ -238,20 +271,23 @@ public class Netlist{
 		int newIndex = numVoltages;
 		for(Component c : circuitElements){
 			if(c instanceof Inductor){
-				((Inductor) c).newIndex = newIndex++;
+				((Inductor)c).newIndex = newIndex++;
 			}
 			else if(c instanceof IndVoltageSource){
-				((IndVoltageSource) c).newIndex = newIndex++;
+				((IndVoltageSource)c).newIndex = newIndex++;
 			}
 			else if(c instanceof VCVS){
-				((VCVS) c).newIndex = newIndex++;
+				((VCVS)c).newIndex = newIndex++;
 			}
 			else if(c instanceof OpAmp){
-				((OpAmp) c).newIndex = newIndex++;
+				((OpAmp)c).newIndex = newIndex++;
 			}
 			else if(c instanceof MutualInductance){
-				((MutualInductance) c).newIndexOne = newIndex++;
-				((MutualInductance) c).newIndexTwo = newIndex++;
+				((MutualInductance)c).newIndexOne = newIndex++;
+				((MutualInductance)c).newIndexTwo = newIndex++;
+			}
+			else if(c instanceof VAC){
+				((VAC)c).newIndex = newIndex++;
 			}
 		}
 	}
@@ -263,39 +299,82 @@ public class Netlist{
 		}
 	}
 	
+	public void simulate(String fileName){
+		for(solutionType s : solutions){
+			switch (s){
+				case FREQ:
+					solveFrequency(fileName);
+					break;
+				case DC:
+					break;
+				case TIME:
+					break;
+			}
+		}
+	}
+	
 	public void solveFrequency(String fileName){
-		double stepSize = (maxFreq - minFreq) / numSteps;
-		double currentFreq = minFreq;
+		int VACNewIndex = -1;
+		double stepSize = -1;
+		double currentFreq = -1;
+		double magnitude = 0;
+		
+		// can only sweep one VAC source at the moment
+		for(Component c : circuitElements){
+			if(c instanceof VAC){
+				VAC temp = (VAC)c;
+				VACNewIndex = temp.getNewIndex();
+				stepSize = (temp.maxFrequency - temp.minFrequency) / temp.numSteps;
+				currentFreq = temp.minFrequency;
+				break;
+			}
+		}
 		
 		try{
 			PrintStream writer = new PrintStream(fileName);
 			PrintStream orig = System.out;
 			
 			// temp matrix to store (G + SC)
-			CDenseMatrix64F solution;
+			CDenseMatrix64F GPlusSC;
 			Complex s;
+			Complex sweepNode;
+			CDenseMatrix64F BNew;
 			LinearSolver<CDenseMatrix64F> solver;
+			
+			// have to assign stdout stream to file
+			System.setOut(writer);
 			
 			for(int i = 0; i < numSteps; i++){
 				// initialize solution
-				solution = new CDenseMatrix64F(C.numCols, C.numRows);
+				GPlusSC = new CDenseMatrix64F(C.numRows, C.numCols);
+				
+				// initialize BNew
+				BNew = B.copy();
+				
 				// create S for the current frequency
 				s = new Complex(0, 2 * Math.PI * currentFreq);
-				// set solution to S*C
-				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), solution);
-				// set solution to (G + SC)
-				CCommonOps.add(G, solution, solution);
+				
+				sweepNode = new Complex(BNew.getReal(VACNewIndex, 0));
+				sweepNode.multiply(s);
+				BNew.set(VACNewIndex, 0, sweepNode.getReal(), sweepNode.getImaginary());
+				
+				// set GPlusSC to S*C
+				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), GPlusSC);
+				// set GPlusSC to (G + SC)
+				CCommonOps.add(G, GPlusSC, GPlusSC);
 				// LU decomposition
 				solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
 				// Solve for this frequency
-				solver.setA(solution);
-				solver.solve(B, X);
+				solver.setA(GPlusSC);
+				solver.solve(BNew, X);
 				// write this solution to the output file
 				// use default print method for CDenseMatrix64F
-				// have to assign stdout stream to file
-				System.setOut(writer);
-				writer.println("Frequency: " + currentFreq);
-				X.print();
+				
+				magnitude = calcMagnitude(9, 0);
+				writer.println("(" + currentFreq + ", " + magnitude + ")");
+				
+				//writer.println("Frequency: " + currentFreq);
+				//X.print();
 				writer.println();
 				// next step, increase frequency
 				currentFreq += stepSize;
@@ -307,6 +386,12 @@ public class Netlist{
 			System.out.println("Couldn't write to file.");
 			System.out.println(e);
 		}
+	}
+	
+	public double calcMagnitude(int row, int col){
+		double real = X.getReal(row, col);
+		double imaginary = X.getImaginary(row, col);
+		return Math.sqrt((real * real)+(imaginary * imaginary));
 	}
 	
 	public void prettyPrint(){

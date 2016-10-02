@@ -13,6 +13,6 @@ public class Main {
 		netlist.prettyPrint();
 		netlist.populateMatricies();
 		netlist.prettyPrintMatrices();
-		netlist.solveFrequency(args[1]);
+		netlist.simulate(args[1]);
 	}
 }
