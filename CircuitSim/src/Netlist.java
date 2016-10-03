@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -186,7 +187,7 @@ public class Netlist{
 				break;
 			case 'a':
 				newComponent = new VAC(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
-						convert(tokens[4]), convert(tokens[5]), Integer.parseInt(tokens[6]));
+						convert(tokens[4]), convert(tokens[5]), convert(tokens[6]), Integer.parseInt(tokens[7]));
 				break;
 			default:
 				Utilities.usage(3);
@@ -297,12 +298,13 @@ public class Netlist{
 	}
 	
 	public void solveFrequency(String fileName){
-		int VACNewIndex = -1;
-		double stepSize = -1;
-		double currentFreq = -1;
+		int VACNewIndex = 0;
+		double stepSize = 0;
+		double currentFreq = 0;
+		double numSteps = 0;
 		double magnitude = 0;
 		double phase = 0;
-		double numSteps = 0;
+		double frequencySource = 0;
 		
 		// can only sweep one VAC source at the moment
 		for(Component c : circuitElements){
@@ -312,20 +314,20 @@ public class Netlist{
 				stepSize = (temp.maxFrequency - temp.minFrequency) / temp.numSteps;
 				currentFreq = temp.minFrequency;
 				numSteps = temp.numSteps;
+				frequencySource = temp.frequency;
 				break;
 			}
 		}
-		
+				
 		try{
 			PrintStream writer = new PrintStream(fileName);
 			PrintStream orig = System.out;
+						
+			double wSource = 2 * Math.PI * frequencySource;
+			double wSourceSquared = wSource * wSource;
 			
-			// temp matrix to store (G + SC)
-			CDenseMatrix64F GPlusSC;
-			Complex s;
-			Complex sweepNode;
-			CDenseMatrix64F BNew;
-			CDenseMatrix64F XNew;
+			CDenseMatrix64F BNew = B.copy();
+			CDenseMatrix64F XNew = X.copy();
 			LinearSolver<CDenseMatrix64F> solver;
 			
 			// have to assign stdout stream to file
@@ -333,15 +335,31 @@ public class Netlist{
 			
 			for(int i = 0; i < numSteps; i++){
 				// initialize solution
-				GPlusSC = new CDenseMatrix64F(C.numRows, C.numCols);
+				CDenseMatrix64F GPlusSC = new CDenseMatrix64F(C.numRows, C.numCols);
 				// initialize BNew and XNew
 				BNew = B.copy();
 				XNew = X.copy();
+				double wSweep = 2 * Math.PI * currentFreq;
+
 				// create S for the current frequency
-				s = new Complex(0, 2 * Math.PI * currentFreq);
-				sweepNode = new Complex(BNew.getReal(VACNewIndex, 0));
-				sweepNode.multiply(s);
-				BNew.set(VACNewIndex, 0, sweepNode.getReal(), sweepNode.getImaginary());
+				Complex s = new Complex(0, wSweep);
+				Complex sSquared = s.multiply(s);
+				
+				// laplace transform of b matrix
+				for(int index = 0; index < BNew.getNumRows(); index++){
+					if(index != VACNewIndex){
+						Complex temp = new Complex(BNew.getReal(index, 0), BNew.getImaginary(index, 0));
+						Complex divided = temp.divide(s);
+						BNew.set(index, 0, divided.getReal(), divided.getImaginary());
+					}
+					else{
+						Complex numerator = new Complex(wSource).multiply(BNew.getReal(VACNewIndex, 0));
+						Complex denominator = sSquared.add(wSourceSquared);
+						Complex temp = numerator.divide(denominator);
+						BNew.set(VACNewIndex, 0, temp.getReal(), temp.getImaginary());
+					}
+				}
+				
 				// set GPlusSC to S*C
 				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), GPlusSC);
 				// set GPlusSC to (G + SC)
@@ -399,5 +417,26 @@ public class Netlist{
 		System.out.println();
 		System.out.println("B Matrix");
 		B.print();
+	}
+	
+	public void print(CDenseMatrix64F matrix){
+		int rows = matrix.numRows;
+		int cols = matrix.numCols;
+		DecimalFormat df = new DecimalFormat("#.##################");
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				
+				System.out.print(String.format("%-20s %s", df.format(matrix.getReal(i, j)), df.format(matrix.getImaginary(i, j)) + "\t"));
+			}
+			System.out.println();
+		}
+		System.out.println("\n");
+	}
+	
+	public void printAll(){
+		print(G);
+		print(C);
+		print(X);
+		print(B);
 	}
 }

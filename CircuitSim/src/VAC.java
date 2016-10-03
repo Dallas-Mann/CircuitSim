@@ -8,15 +8,17 @@ public class VAC implements Component{
 	protected int nodeTwo;
 	protected int newIndex;
 	protected double amplitude;
+	protected double frequency;
 	protected double minFrequency;
 	protected double maxFrequency;
 	protected int numSteps;
 
-	public VAC(String id, int nodeOne, int nodeTwo, double amplitude, double minFrequency, double maxFrequency, int numSteps){
+	public VAC(String id, int nodeOne, int nodeTwo, double amplitude, double frequency, double minFrequency, double maxFrequency, int numSteps){
 		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.amplitude = amplitude;
+		this.frequency = frequency;
 		this.minFrequency = minFrequency;
 		this.maxFrequency = maxFrequency;
 		this.numSteps = numSteps;
@@ -32,12 +34,13 @@ public class VAC implements Component{
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
+		
 		if(!(nodeOne == 0)){
 			G.setReal(indexOne, newIndex, G.getReal(indexOne, newIndex) + 1);
 			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) + 1);
 		}
 		if(!(nodeTwo == 0)){
-			G.setReal(indexTwo, newIndex, G.getReal(indexTwo, indexTwo) - 1);
+			G.setReal(indexTwo, newIndex, G.getReal(indexTwo, newIndex) - 1);
 			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) - 1);
 		}
 		B.setReal(newIndex, 0, B.getReal(newIndex, 0) + amplitude);
