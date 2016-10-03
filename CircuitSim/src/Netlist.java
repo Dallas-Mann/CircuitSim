@@ -301,6 +301,7 @@ public class Netlist{
 		double stepSize = -1;
 		double currentFreq = -1;
 		double magnitude = 0;
+		double phase = 0;
 		double numSteps = 0;
 		
 		// can only sweep one VAC source at the moment
@@ -351,7 +352,9 @@ public class Netlist{
 				solver.setA(GPlusSC);
 				solver.solve(BNew, XNew);
 				magnitude = calcMagnitude(nodeToTrack, 0, XNew);
-				writer.println(currentFreq + "\t" + magnitude);
+				phase = calcPhase(nodeToTrack, 0, XNew);
+				
+				writer.println(currentFreq + "\t" + magnitude + "\t" + phase);
 				// next step, increase frequency
 				currentFreq += stepSize;
 			}
@@ -368,6 +371,12 @@ public class Netlist{
 		double real = matrix.getReal(row, col);
 		double imaginary = matrix.getImaginary(row, col);
 		return Math.sqrt((real * real)+(imaginary * imaginary));
+	}
+	
+	public double calcPhase(int row, int col, CDenseMatrix64F matrix){
+		double real = matrix.getReal(row, col);
+		double imaginary = matrix.getImaginary(row, col);
+		return Math.atan(imaginary/real);
 	}
 	
 	public void prettyPrint(){
