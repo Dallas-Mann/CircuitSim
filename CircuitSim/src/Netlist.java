@@ -29,13 +29,10 @@ public class Netlist{
 	private CDenseMatrix64F C;
 	private CDenseMatrix64F B;
 	
-	private double minFreq = 0;
-	private double maxFreq = 10000;
-	private int numSteps = 1000;
-	
 	// used to calculate matrix sizes before hand so we don't have to resize them repeatedly
 	private int numVoltages;
 	private int numCurrents;
+	private int nodeToTrack;
 	
 	public Netlist(){
 		// our list of circuit elements and matrices to be populated
@@ -64,7 +61,7 @@ public class Netlist{
 		this.numCurrents += amount;
 	}
 	
-	// resizes all the relevant matrices after reading in netlist
+	// sets all the relevant matrix sizes after reading in netlist
 	private void resizeMatrices(){
 		int size = numVoltages + numCurrents;
 		G.reshape(size, size);
@@ -96,6 +93,7 @@ public class Netlist{
 			switch(tokens[0].toLowerCase().substring(1)){
 				case "freq":
 					solutions.add(solutionType.FREQ);
+					nodeToTrack = Integer.parseInt(tokens[1]) - 1;
 					break;
 				case "dc":
 					solutions.add(solutionType.DC);
@@ -126,11 +124,8 @@ public class Netlist{
     Voltage-controlled voltage source E
     Voltage-controlled current source G
     Mutual Inductance/Coupling K
-    
 
-	
 -->	Components not currently implemented
-
 	Current-controlled voltage source F
     Current-controlled current source H
     Diode D
@@ -193,17 +188,6 @@ public class Netlist{
 				newComponent = new VAC(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
 						convert(tokens[4]), convert(tokens[5]), Integer.parseInt(tokens[6]));
 				break;
-				/*
-				 * TODO
-				 * 
-			case 'v':
-				
-			case 'd':
-				
-			case 'q':
-				
-			case 'm':
-			*/
 			default:
 				Utilities.usage(3);
 				System.exit(-1);
@@ -232,7 +216,6 @@ public class Netlist{
 			G 	E+9 	giga
 			T 	E+12 	tera
 			 */
-			
 			String[] value = Utilities.splitString(token);
 			double baseNum = Double.parseDouble(value[0]);
 			
@@ -318,6 +301,7 @@ public class Netlist{
 		double stepSize = -1;
 		double currentFreq = -1;
 		double magnitude = 0;
+		double numSteps = 0;
 		
 		// can only sweep one VAC source at the moment
 		for(Component c : circuitElements){
@@ -326,6 +310,7 @@ public class Netlist{
 				VACNewIndex = temp.getNewIndex();
 				stepSize = (temp.maxFrequency - temp.minFrequency) / temp.numSteps;
 				currentFreq = temp.minFrequency;
+				numSteps = temp.numSteps;
 				break;
 			}
 		}
@@ -339,6 +324,7 @@ public class Netlist{
 			Complex s;
 			Complex sweepNode;
 			CDenseMatrix64F BNew;
+			CDenseMatrix64F XNew;
 			LinearSolver<CDenseMatrix64F> solver;
 			
 			// have to assign stdout stream to file
@@ -347,17 +333,14 @@ public class Netlist{
 			for(int i = 0; i < numSteps; i++){
 				// initialize solution
 				GPlusSC = new CDenseMatrix64F(C.numRows, C.numCols);
-				
-				// initialize BNew
+				// initialize BNew and XNew
 				BNew = B.copy();
-				
+				XNew = X.copy();
 				// create S for the current frequency
 				s = new Complex(0, 2 * Math.PI * currentFreq);
-				
 				sweepNode = new Complex(BNew.getReal(VACNewIndex, 0));
 				sweepNode.multiply(s);
 				BNew.set(VACNewIndex, 0, sweepNode.getReal(), sweepNode.getImaginary());
-				
 				// set GPlusSC to S*C
 				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), GPlusSC);
 				// set GPlusSC to (G + SC)
@@ -366,16 +349,9 @@ public class Netlist{
 				solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
 				// Solve for this frequency
 				solver.setA(GPlusSC);
-				solver.solve(BNew, X);
-				// write this solution to the output file
-				// use default print method for CDenseMatrix64F
-				
-				magnitude = calcMagnitude(9, 0);
-				writer.println("(" + currentFreq + ", " + magnitude + ")");
-				
-				//writer.println("Frequency: " + currentFreq);
-				//X.print();
-				writer.println();
+				solver.solve(BNew, XNew);
+				magnitude = calcMagnitude(nodeToTrack, 0, XNew);
+				writer.println(currentFreq + "\t" + magnitude);
 				// next step, increase frequency
 				currentFreq += stepSize;
 			}
@@ -388,9 +364,9 @@ public class Netlist{
 		}
 	}
 	
-	public double calcMagnitude(int row, int col){
-		double real = X.getReal(row, col);
-		double imaginary = X.getImaginary(row, col);
+	public double calcMagnitude(int row, int col, CDenseMatrix64F matrix){
+		double real = matrix.getReal(row, col);
+		double imaginary = matrix.getImaginary(row, col);
 		return Math.sqrt((real * real)+(imaginary * imaginary));
 	}
 	
