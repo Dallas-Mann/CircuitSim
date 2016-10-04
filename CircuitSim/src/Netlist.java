@@ -304,7 +304,6 @@ public class Netlist{
 		double numSteps = 0;
 		double magnitude = 0;
 		double phase = 0;
-		double frequencySource = 0;
 		
 		// can only sweep one VAC source at the moment
 		for(Component c : circuitElements){
@@ -314,7 +313,6 @@ public class Netlist{
 				stepSize = (temp.maxFrequency - temp.minFrequency) / temp.numSteps;
 				currentFreq = temp.minFrequency;
 				numSteps = temp.numSteps;
-				frequencySource = temp.frequency;
 				break;
 			}
 		}
@@ -322,9 +320,6 @@ public class Netlist{
 		try{
 			PrintStream writer = new PrintStream(fileName);
 			PrintStream orig = System.out;
-						
-			double wSource = 2 * Math.PI * frequencySource;
-			double wSourceSquared = wSource * wSource;
 			
 			CDenseMatrix64F BNew = B.copy();
 			CDenseMatrix64F XNew = X.copy();
@@ -334,7 +329,7 @@ public class Netlist{
 			System.setOut(writer);
 			
 			for(int i = 0; i < numSteps; i++){
-				// initialize solution
+				// initialize new matrices to store G+SC, B, and X, so original matrices are not modified
 				CDenseMatrix64F GPlusSC = new CDenseMatrix64F(C.numRows, C.numCols);
 				// initialize BNew and XNew
 				BNew = B.copy();
@@ -343,20 +338,14 @@ public class Netlist{
 
 				// create S for the current frequency
 				Complex s = new Complex(0, wSweep);
-				Complex sSquared = s.multiply(s);
 				
-				// laplace transform of b matrix
+				// remove dc value from b if f != 0
 				for(int index = 0; index < BNew.getNumRows(); index++){
-					if(index != VACNewIndex){
-						Complex temp = new Complex(BNew.getReal(index, 0), BNew.getImaginary(index, 0));
-						Complex divided = temp.divide(s);
-						BNew.set(index, 0, divided.getReal(), divided.getImaginary());
-					}
-					else{
-						Complex numerator = new Complex(wSource).multiply(BNew.getReal(VACNewIndex, 0));
-						Complex denominator = sSquared.add(wSourceSquared);
-						Complex temp = numerator.divide(denominator);
-						BNew.set(VACNewIndex, 0, temp.getReal(), temp.getImaginary());
+					//keep dc component at f=0Hz
+					if(currentFreq != 0){
+						if(index != VACNewIndex){
+							BNew.set(index, 0, 0, 0);
+						}
 					}
 				}
 				
@@ -364,11 +353,13 @@ public class Netlist{
 				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), GPlusSC);
 				// set GPlusSC to (G + SC)
 				CCommonOps.add(G, GPlusSC, GPlusSC);
+				
 				// LU decomposition
 				solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
 				// Solve for this frequency
 				solver.setA(GPlusSC);
 				solver.solve(BNew, XNew);
+				
 				magnitude = calcMagnitude(nodeToTrack, 0, XNew);
 				phase = calcPhase(nodeToTrack, 0, XNew);
 				
