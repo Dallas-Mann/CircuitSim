@@ -10,10 +10,10 @@ public class Main {
 		netlist.readNetlist(args[0]);
 		
 		//verify the netlist was read in and show all the components.
-		netlist.prettyPrint();
+		//netlist.prettyPrintNetlist();
 		netlist.populateMatricies();
 		netlist.prettyPrintMatrices();
-		netlist.printAll();
+		//netlist.printAll();
 		netlist.simulate(args[1]);
 	}
 }

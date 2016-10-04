@@ -1,14 +1,17 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
 import org.ejml.data.CDenseMatrix64F;
+import org.ejml.data.DenseMatrix64F;
 import org.ejml.factory.CLinearSolverFactory;
 import org.ejml.interfaces.linsol.LinearSolver;
 import org.ejml.ops.CCommonOps;
@@ -328,7 +331,6 @@ public class Netlist{
 			
 			CDenseMatrix64F BNew = B.copy();
 			CDenseMatrix64F XNew = X.copy();
-			LinearSolver<CDenseMatrix64F> solver;
 			
 			// have to assign stdout stream to file
 			System.setOut(writer);
@@ -365,7 +367,7 @@ public class Netlist{
 				// set GPlusSC to (G + SC)
 				CCommonOps.add(G, GPlusSC, GPlusSC);
 				// LU decomposition
-				solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+				LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
 				// Solve for this frequency
 				solver.setA(GPlusSC);
 				solver.solve(BNew, XNew);
@@ -397,7 +399,7 @@ public class Netlist{
 		return Math.atan(imaginary/real);
 	}
 	
-	public void prettyPrint(){
+	public void prettyPrintNetlist(){
 		System.out.println("voltages: " + numVoltages + "\t currents: " + numCurrents);
 		for(Component c : circuitElements){
 			System.out.println(c.toString());
@@ -419,24 +421,25 @@ public class Netlist{
 		B.print();
 	}
 	
-	public void print(CDenseMatrix64F matrix){
-		int rows = matrix.numRows;
-		int cols = matrix.numCols;
-		DecimalFormat df = new DecimalFormat("#.##################");
-		for(int i = 0; i < rows; i++){
-			for(int j = 0; j < cols; j++){
-				
-				System.out.print(String.format("%-20s %s", df.format(matrix.getReal(i, j)), df.format(matrix.getImaginary(i, j)) + "\t"));
+	void printConvert(CDenseMatrix64F matrix){
+		int numRows = matrix.numRows;
+		int numCols = matrix.numCols;
+		DenseMatrix64F temp = new DenseMatrix64F(numRows, numCols);
+		CCommonOps.stripReal(matrix, temp);
+		DecimalFormat df = new DecimalFormat("#.#############");
+		for(int i = 0; i < numRows; i++){
+			for(int j = 0; j < numCols; j++){
+				System.out.print(String.format("%-20s", df.format(temp.get(i, j))));
 			}
 			System.out.println();
 		}
-		System.out.println("\n");
+		System.out.println();
 	}
 	
-	public void printAll(){
-		print(G);
-		print(C);
-		print(X);
-		print(B);
+	void printAll(){
+			printConvert(G);
+			printConvert(C);
+			printConvert(X);
+			printConvert(B);
 	}
 }
