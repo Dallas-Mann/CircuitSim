@@ -365,7 +365,12 @@ public class Netlist{
 				
 				writer.println(currentFreq + "\t" + magnitude + "\t" + phase);
 				// next step, increase frequency
-				currentFreq += stepSize;
+				if(i < numSteps / 10){
+					currentFreq += 0.1 * stepSize;
+				}
+				else{
+					currentFreq += stepSize;
+				}
 			}
 			System.setOut(orig);
 			writer.close();
