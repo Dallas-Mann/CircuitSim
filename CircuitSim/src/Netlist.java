@@ -1,10 +1,8 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +17,7 @@ import org.ejml.ops.CCommonOps;
 public class Netlist{
 	
 	public enum solutionType{
-		FREQ, DC, TIME
+		FREQ, DC, TRAN
 	}
 	
 	private List<Component> circuitElements;
@@ -103,7 +101,7 @@ public class Netlist{
 					solutions.add(solutionType.DC);
 					break;
 				case "time":
-					solutions.add(solutionType.TIME);
+					solutions.add(solutionType.TRAN);
 					break;
 			}
 		}
@@ -292,9 +290,10 @@ public class Netlist{
 				case FREQ:
 					solveFrequency(fileName);
 					break;
+				//TODO
 				case DC:
 					break;
-				case TIME:
+				case TRAN:
 					break;
 			}
 		}
