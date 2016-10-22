@@ -2,25 +2,28 @@ import java.util.List;
 
 import org.ejml.data.CDenseMatrix64F;
 
-public class VAC implements Component{
+public class VPulse implements Component{
 	protected String id;
 	protected int nodeOne;
 	protected int nodeTwo;
 	protected int newIndex;
 	protected double amplitude;
-	protected double frequency;
-	protected double minFrequency;
-	protected double maxFrequency;
+	protected double riseTime;
+	protected double pulseWidth;
+	protected double minTime;
+	protected double maxTime;
 	protected int numSteps;
 
-	public VAC(String id, int nodeOne, int nodeTwo, double amplitude, double frequency, double minFrequency, double maxFrequency, int numSteps){
+	public VPulse(String id, int nodeOne, int nodeTwo, double amplitude, double riseTime,
+			double pulseWidth, double minTime, double maxTime, int numSteps){
 		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.amplitude = amplitude;
-		this.frequency = frequency;
-		this.minFrequency = minFrequency;
-		this.maxFrequency = maxFrequency;
+		this.riseTime = riseTime;
+		this.pulseWidth = pulseWidth;
+		this.minTime = minTime;
+		this.maxTime = maxTime;
 		this.numSteps = numSteps;
 	}
 	
@@ -45,13 +48,6 @@ public class VAC implements Component{
 			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) - 1);
 		}
 		B.setReal(newIndex, 0, B.getReal(newIndex, 0) + amplitude);
-		
-		/*
-		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id);
-		G.print();
-		B.print();
-		*/
 	}
 
 	public int getNewIndex(){

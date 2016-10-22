@@ -17,7 +17,7 @@ import org.ejml.ops.CCommonOps;
 public class Netlist{
 	
 	public enum solutionType{
-		FREQ, DC, TRAN
+		FREQ, DC, TIME
 	}
 	
 	private List<Component> circuitElements;
@@ -101,7 +101,8 @@ public class Netlist{
 					solutions.add(solutionType.DC);
 					break;
 				case "time":
-					solutions.add(solutionType.TRAN);
+					solutions.add(solutionType.TIME);
+					nodeToTrack = Integer.parseInt(tokens[1]) - 1;
 					break;
 			}
 		}
@@ -190,6 +191,10 @@ public class Netlist{
 				newComponent = new VAC(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
 						convert(tokens[4]), convert(tokens[5]), convert(tokens[6]), Integer.parseInt(tokens[7]));
 				break;
+			case 'p':
+				newComponent = new VPulse(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
+						convert(tokens[4]), convert(tokens[5]), convert(tokens[6]), convert(tokens[7]), Integer.parseInt(tokens[8]));
+				break;
 			default:
 				Utilities.usage(3);
 				System.exit(-1);
@@ -274,6 +279,9 @@ public class Netlist{
 			else if(c instanceof VAC){
 				((VAC)c).newIndex = newIndex++;
 			}
+			else if(c instanceof VPulse){
+				((VPulse)c).newIndex = newIndex++;
+			}
 		}
 	}
 
@@ -293,7 +301,8 @@ public class Netlist{
 				//TODO
 				case DC:
 					break;
-				case TRAN:
+				case TIME:
+					solveTime(fileName);
 					break;
 			}
 		}
@@ -372,6 +381,95 @@ public class Netlist{
 				else{
 					currentFreq += stepSize;
 				}
+			}
+			System.setOut(orig);
+			writer.close();
+		}
+		catch (Exception e){
+			System.out.println("Couldn't write to file.");
+			System.out.println(e);
+		}
+	}
+	
+	public void solveTime(String fileName){
+		int VPulseNewIndex = 0;
+		double stepSize = 0;
+		double currentTime = 0;
+		double numSteps = 0;
+		double amplitude = 0;
+		double riseTime = 0;
+		double pulseWidth = 0;
+		double magnitude = 0;
+		double vPulseValue = 0;
+		
+		// can only sweep one VPulse source at the moment
+		for(Component c : circuitElements){
+			if(c instanceof VPulse){
+				VPulse temp = (VPulse)c;
+				VPulseNewIndex = temp.getNewIndex();
+				stepSize = (temp.maxTime - temp.minTime) / temp.numSteps;
+				currentTime = temp.minTime;
+				numSteps = temp.numSteps;
+				amplitude = temp.amplitude;
+				riseTime = temp.riseTime;
+				pulseWidth = temp.pulseWidth;
+				break;
+			}
+		}
+				
+		try{
+			PrintStream writer = new PrintStream(fileName);
+			PrintStream orig = System.out;
+			//solveTime uses backward euler
+			
+			//initialize these matrices to the correct dimensions
+			CDenseMatrix64F BNew = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			CDenseMatrix64F BCopy = B.copy();
+			CDenseMatrix64F XNew = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+			CDenseMatrix64F COverH = new CDenseMatrix64F(C.getNumRows(), C.getNumCols());
+			// StaticA is G+(C/h), set below
+			CDenseMatrix64F StaticA = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			
+			//COverH doesn't change, set it to C/h where h is the timestep
+			CCommonOps.elementDivide(C, stepSize, 0, COverH);
+			CCommonOps.add(G, COverH, StaticA);
+			
+			//initialize XPreviousTimePoint with zeros
+			CDenseMatrix64F XPreviousTimePoint = X.copy();
+			
+			//Solve Ax=B with StaticA, XNew, Bnew
+			for(int i = 0; i < numSteps; i++){
+				//calculate VPulse value
+				if(0 <= currentTime && currentTime < riseTime){
+					vPulseValue = ((amplitude/riseTime)*currentTime);
+				}
+				else if(riseTime  <= currentTime && currentTime <= riseTime+pulseWidth){
+					vPulseValue = amplitude;
+				}
+				else if(riseTime+pulseWidth < currentTime && currentTime < 2*riseTime+pulseWidth){
+					vPulseValue = (amplitude-((amplitude/riseTime)*(currentTime - (riseTime + pulseWidth))));
+				}
+				else{
+					vPulseValue = 0;
+				}
+				//set B with the correct voltage value for the pulse input
+				BCopy.set(VPulseNewIndex, 0, vPulseValue, 0);
+				CCommonOps.mult(COverH, XPreviousTimePoint, BNew);
+				CCommonOps.add(BCopy, BNew, BDynamic);
+				// LU decomposition
+				LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+				// Solve for this time point
+				solver.setA(StaticA);
+				solver.solve(BDynamic, XNew);
+				magnitude = XNew.getReal(nodeToTrack, 0);
+						//calcMagnitude(nodeToTrack, 0, XNew);
+				writer.println(currentTime + "\t" + magnitude);
+				//set XPreviousTimePoint to the solution we just calculated in XNew
+				XPreviousTimePoint = XNew.copy();
+				currentTime += stepSize;
+				
+				//writer.println("BCopy: " + BCopy.getReal(VPulseNewIndex, 0));
 			}
 			System.setOut(orig);
 			writer.close();
