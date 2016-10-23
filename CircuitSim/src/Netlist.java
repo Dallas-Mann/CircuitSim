@@ -420,7 +420,6 @@ public class Netlist{
 		try{
 			PrintStream writer = new PrintStream(fileName);
 			PrintStream orig = System.out;
-			//solveTime uses backward euler
 			
 			//initialize these matrices to the correct dimensions
 			CDenseMatrix64F BDynamic;
@@ -480,7 +479,98 @@ public class Netlist{
 	}
 	
 	public void solveTimeTrapezoidalRule(String fileName){
-		//TODO
+		int VPulseNewIndex = 0;
+		double stepSize = 0;
+		double currentTime = 0;
+		double numSteps = 0;
+		double amplitude = 0;
+		double riseTime = 0;
+		double pulseWidth = 0;
+		double magnitude = 0;
+		double vPulseValue = 0;
+		
+		// can only sweep one VPulse source at the moment
+		for(Component c : circuitElements){
+			if(c instanceof VPulse){
+				VPulse temp = (VPulse)c;
+				VPulseNewIndex = temp.getNewIndex();
+				stepSize = (temp.maxTime - temp.minTime) / temp.numSteps;
+				currentTime = temp.minTime;
+				numSteps = temp.numSteps;
+				amplitude = temp.amplitude;
+				riseTime = temp.riseTime;
+				pulseWidth = temp.pulseWidth;
+				break;
+			}
+		}
+				
+		try{
+			PrintStream writer = new PrintStream(fileName);
+			PrintStream orig = System.out;
+			
+			//initialize these matrices to the correct dimensions
+			CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			CDenseMatrix64F BCurrentTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			CDenseMatrix64F BPreviousTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			CDenseMatrix64F XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+			
+			// StaticA = (G/2)+(C/h), set below (doesn't change)
+			CDenseMatrix64F COverH = new CDenseMatrix64F(C.getNumRows(), C.getNumCols());
+			CDenseMatrix64F GOverTwo = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			CDenseMatrix64F StaticA = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			CCommonOps.elementDivide(C, stepSize, 0, COverH);
+			CCommonOps.elementDivide(G, 2, 0, GOverTwo);
+			CCommonOps.add(GOverTwo, COverH, StaticA);
+			
+			//StaticB = (C/h)-(G/2), set below (doesn't change)
+			CDenseMatrix64F StaticB = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			CCommonOps.subtract(COverH, GOverTwo, StaticB);
+			
+			//initialize XPreviousTimePoint with zeros
+			CDenseMatrix64F XPreviousTimePoint = X.copy();
+			
+			LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+			
+			//Solve Ax=B with StaticA, XNew, Bnew
+			for(int i = 0; i < numSteps; i++){
+				BCurrentTimePoint = B;
+				//calculate VPulse value
+				if(0 <= currentTime && currentTime < riseTime){
+					vPulseValue = ((amplitude/riseTime)*currentTime);
+				}
+				else if(riseTime  <= currentTime && currentTime <= riseTime+pulseWidth){
+					vPulseValue = amplitude;
+				}
+				else if(riseTime+pulseWidth < currentTime && currentTime < 2*riseTime+pulseWidth){
+					vPulseValue = (amplitude-((amplitude/riseTime)*(currentTime - (riseTime + pulseWidth))));
+				}
+				else{
+					vPulseValue = 0;
+				}
+				//set BCurrentTimePoint with the correct voltage value for the pulse input
+				BCurrentTimePoint.set(VPulseNewIndex, 0, vPulseValue, 0);
+				//BDynamic = (B(tk)+B(tk-1))/2
+				CCommonOps.add(BCurrentTimePoint, BPreviousTimePoint, BDynamic);
+				CCommonOps.elementDivide(BDynamic, 2, 0, BDynamic);
+				//BDynamic = (B(tk)+B(tk-1))/2 + ((C/h)-(G/2))*X(tk-1)
+				CCommonOps.multAdd(StaticB, XPreviousTimePoint, BDynamic);
+				// LU decomposition, Solve for this time point
+				solver.setA(StaticA);
+				solver.solve(BDynamic, XCurrent);
+				magnitude = XCurrent.getReal(nodeToTrack, 0);
+				writer.println(currentTime + "\t" + magnitude);
+				//set XPreviousTimePoint to the solution we just calculated in XCurrent
+				XPreviousTimePoint = XCurrent.copy();
+				BPreviousTimePoint = BCurrentTimePoint;
+				currentTime += stepSize;
+			}
+			System.setOut(orig);
+			writer.close();
+		}
+		catch (Exception e){
+			System.out.println("Couldn't write to file.");
+			System.out.println(e);
+		}
 	}
 	
 	public double calcMagnitude(int row, int col, CDenseMatrix64F matrix){
