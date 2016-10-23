@@ -38,12 +38,6 @@ public class Resistor implements Component{
 			G.setReal(indexOne, indexTwo, G.getReal(indexOne, indexTwo) - conductance);
 			G.setReal(indexTwo, indexOne, G.getReal(indexTwo, indexOne) - conductance);
 		}
-		
-		/*
-		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id);
-		G.print();
-		*/
 	}
 
 	@Override

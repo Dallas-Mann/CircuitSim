@@ -38,12 +38,6 @@ public class Capacitor implements Component{
 			C.setReal(indexOne, indexTwo, C.getReal(indexOne, indexTwo) - capacitance);
 			C.setReal(indexTwo, indexOne, C.getReal(indexTwo, indexOne) - capacitance);
 		}
-		
-		/*
-		// show changes in C Matrix to debug
-		System.out.println("Inserted Element " + this.id);
-		C.print();
-		*/
 	}
 
 	@Override

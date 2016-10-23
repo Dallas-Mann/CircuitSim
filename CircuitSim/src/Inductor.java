@@ -30,18 +30,11 @@ public class Inductor implements Component{
 			G.setReal(indexOne, newIndex, G.getReal(indexOne, newIndex) + 1);
 			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) + 1);
 		}
-		else if(!(nodeTwo == 0)){
+		if(!(nodeTwo == 0)){
 			G.setReal(indexTwo, newIndex, G.getReal(indexTwo, indexTwo) - 1);
 			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) - 1);
 		}
 		C.setReal(newIndex, newIndex, C.getReal(newIndex, newIndex) - inductance);
-		
-		/*
-		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id);
-		G.print();
-		C.print();
-		*/
 	}
 
 	@Override

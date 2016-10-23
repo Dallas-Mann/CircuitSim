@@ -302,7 +302,7 @@ public class Netlist{
 				case DC:
 					break;
 				case TIME:
-					solveTime(fileName);
+					solveTimeBackwardEuler(fileName);
 					break;
 			}
 		}
@@ -332,8 +332,8 @@ public class Netlist{
 			PrintStream writer = new PrintStream(fileName);
 			PrintStream orig = System.out;
 			
-			CDenseMatrix64F BNew = B.copy();
-			CDenseMatrix64F XNew = X.copy();
+			CDenseMatrix64F BNew;
+			CDenseMatrix64F XNew;
 			
 			// have to assign stdout stream to file
 			System.setOut(writer);
@@ -342,8 +342,8 @@ public class Netlist{
 				// initialize new matrices to store G+SC, B, and X, so original matrices are not modified
 				CDenseMatrix64F GPlusSC = new CDenseMatrix64F(C.numRows, C.numCols);
 				// initialize BNew and XNew
-				BNew = B.copy();
-				XNew = X.copy();
+				BNew = B;
+				XNew = X;
 				double wSweep = 2 * Math.PI * currentFreq;
 
 				// create S for the current frequency
@@ -391,7 +391,7 @@ public class Netlist{
 		}
 	}
 	
-	public void solveTime(String fileName){
+	public void solveTimeBackwardEuler(String fileName){
 		int VPulseNewIndex = 0;
 		double stepSize = 0;
 		double currentTime = 0;
@@ -423,23 +423,27 @@ public class Netlist{
 			//solveTime uses backward euler
 			
 			//initialize these matrices to the correct dimensions
-			CDenseMatrix64F BNew = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			CDenseMatrix64F BCopy = B.copy();
-			CDenseMatrix64F XNew = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
-			CDenseMatrix64F COverH = new CDenseMatrix64F(C.getNumRows(), C.getNumCols());
-			// StaticA is G+(C/h), set below
-			CDenseMatrix64F StaticA = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			CDenseMatrix64F BDynamic;
+			CDenseMatrix64F BWithSourceVals;
+			CDenseMatrix64F XCurrent;
 			
-			//COverH doesn't change, set it to C/h where h is the timestep
+			// StaticA = G+(C/h), set below (doesn't change)
+			CDenseMatrix64F COverH = new CDenseMatrix64F(C.getNumRows(), C.getNumCols());
+			CDenseMatrix64F StaticA = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
 			CCommonOps.elementDivide(C, stepSize, 0, COverH);
 			CCommonOps.add(G, COverH, StaticA);
 			
 			//initialize XPreviousTimePoint with zeros
 			CDenseMatrix64F XPreviousTimePoint = X.copy();
 			
+			LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+			
 			//Solve Ax=B with StaticA, XNew, Bnew
 			for(int i = 0; i < numSteps; i++){
+				BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+				BWithSourceVals = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+				XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
 					vPulseValue = ((amplitude/riseTime)*currentTime);
@@ -454,22 +458,17 @@ public class Netlist{
 					vPulseValue = 0;
 				}
 				//set B with the correct voltage value for the pulse input
-				BCopy.set(VPulseNewIndex, 0, vPulseValue, 0);
-				CCommonOps.mult(COverH, XPreviousTimePoint, BNew);
-				CCommonOps.add(BCopy, BNew, BDynamic);
-				// LU decomposition
-				LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
-				// Solve for this time point
+				BWithSourceVals.set(VPulseNewIndex, 0, vPulseValue, 0);
+				CCommonOps.mult(COverH, XPreviousTimePoint, BDynamic);
+				CCommonOps.add(BWithSourceVals, BDynamic, BDynamic);
+				// LU decomposition, Solve for this time point
 				solver.setA(StaticA);
-				solver.solve(BDynamic, XNew);
-				magnitude = XNew.getReal(nodeToTrack, 0);
-						//calcMagnitude(nodeToTrack, 0, XNew);
+				solver.solve(BDynamic, XCurrent);
+				magnitude = XCurrent.getReal(nodeToTrack, 0);
 				writer.println(currentTime + "\t" + magnitude);
-				//set XPreviousTimePoint to the solution we just calculated in XNew
-				XPreviousTimePoint = XNew.copy();
+				//set XPreviousTimePoint to the solution we just calculated in XCurrent
+				XPreviousTimePoint = XCurrent.copy();
 				currentTime += stepSize;
-				
-				//writer.println("BCopy: " + BCopy.getReal(VPulseNewIndex, 0));
 			}
 			System.setOut(orig);
 			writer.close();
@@ -478,6 +477,10 @@ public class Netlist{
 			System.out.println("Couldn't write to file.");
 			System.out.println(e);
 		}
+	}
+	
+	public void solveTimeTrapezoidalRule(String fileName){
+		//TODO
 	}
 	
 	public double calcMagnitude(int row, int col, CDenseMatrix64F matrix){
