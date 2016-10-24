@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
+import org.ejml.alg.dense.linsol.LinearSolverSafe;
 import org.ejml.data.CDenseMatrix64F;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.factory.CLinearSolverFactory;
@@ -303,6 +304,7 @@ public class Netlist{
 					break;
 				case TIME:
 					solveTimeBackwardEuler(fileName);
+					//solveTimeTrapezoidalRule(fileName);
 					break;
 			}
 		}
@@ -391,6 +393,7 @@ public class Netlist{
 		}
 	}
 	
+	//not accounting for non-linear elements
 	public void solveTimeBackwardEuler(String fileName){
 		int VPulseNewIndex = 0;
 		double stepSize = 0;
@@ -406,7 +409,7 @@ public class Netlist{
 		for(Component c : circuitElements){
 			if(c instanceof VPulse){
 				VPulse temp = (VPulse)c;
-				VPulseNewIndex = temp.getNewIndex();
+				VPulseNewIndex = temp.newIndex;
 				stepSize = (temp.maxTime - temp.minTime) / temp.numSteps;
 				currentTime = temp.minTime;
 				numSteps = temp.numSteps;
@@ -421,27 +424,27 @@ public class Netlist{
 			PrintStream writer = new PrintStream(fileName);
 			PrintStream orig = System.out;
 			
-			//initialize these matrices to the correct dimensions
-			CDenseMatrix64F BDynamic;
-			CDenseMatrix64F BWithSourceVals;
-			CDenseMatrix64F XCurrent;
-			
-			// StaticA = G+(C/h), set below (doesn't change)
+			// AStatic = G+(C/h), set below (doesn't change)
 			CDenseMatrix64F COverH = new CDenseMatrix64F(C.getNumRows(), C.getNumCols());
-			CDenseMatrix64F StaticA = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			CDenseMatrix64F AStatic = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
 			CCommonOps.elementDivide(C, stepSize, 0, COverH);
-			CCommonOps.add(G, COverH, StaticA);
+			CCommonOps.add(G, COverH, AStatic);
 			
 			//initialize XPreviousTimePoint with zeros
 			CDenseMatrix64F XPreviousTimePoint = X.copy();
 			
 			LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+			LinearSolverSafe<CDenseMatrix64F> safeSolver = new LinearSolverSafe<CDenseMatrix64F>(solver);
+			safeSolver.setA(AStatic);
 			
-			//Solve Ax=B with StaticA, XNew, Bnew
+			//initialize these matrices to the correct dimensions
+			CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			CDenseMatrix64F BCurrentTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			CDenseMatrix64F XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+			
 			for(int i = 0; i < numSteps; i++){
-				BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-				BWithSourceVals = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-				XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+				BDynamic = XPreviousTimePoint.copy();
+				BCurrentTimePoint = B.copy();
 				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
@@ -456,13 +459,13 @@ public class Netlist{
 				else{
 					vPulseValue = 0;
 				}
-				//set B with the correct voltage value for the pulse input
-				BWithSourceVals.set(VPulseNewIndex, 0, vPulseValue, 0);
+				//set BWithSourceVals with the correct voltage value for the pulse input
+				BCurrentTimePoint.set(VPulseNewIndex, 0, vPulseValue, 0);
+				
 				CCommonOps.mult(COverH, XPreviousTimePoint, BDynamic);
-				CCommonOps.add(BWithSourceVals, BDynamic, BDynamic);
+				CCommonOps.add(BCurrentTimePoint, BDynamic, BCurrentTimePoint);
 				// LU decomposition, Solve for this time point
-				solver.setA(StaticA);
-				solver.solve(BDynamic, XCurrent);
+				safeSolver.solve(BCurrentTimePoint, XCurrent);
 				magnitude = XCurrent.getReal(nodeToTrack, 0);
 				writer.println(currentTime + "\t" + magnitude);
 				//set XPreviousTimePoint to the solution we just calculated in XCurrent
@@ -478,6 +481,7 @@ public class Netlist{
 		}
 	}
 	
+	//not accounting for non-linear elements
 	public void solveTimeTrapezoidalRule(String fileName){
 		int VPulseNewIndex = 0;
 		double stepSize = 0;
@@ -512,28 +516,30 @@ public class Netlist{
 			CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
 			CDenseMatrix64F BCurrentTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
 			CDenseMatrix64F BPreviousTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			CDenseMatrix64F XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+			CDenseMatrix64F XCurrentTimePoint = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
 			
-			// StaticA = (G/2)+(C/h), set below (doesn't change)
 			CDenseMatrix64F COverH = new CDenseMatrix64F(C.getNumRows(), C.getNumCols());
 			CDenseMatrix64F GOverTwo = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
-			CDenseMatrix64F StaticA = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
 			CCommonOps.elementDivide(C, stepSize, 0, COverH);
 			CCommonOps.elementDivide(G, 2, 0, GOverTwo);
-			CCommonOps.add(GOverTwo, COverH, StaticA);
+			
+			// StaticA = (G/2)+(C/h), set below (doesn't change)
+			CDenseMatrix64F AStatic = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			CCommonOps.add(GOverTwo, COverH, AStatic);
 			
 			//StaticB = (C/h)-(G/2), set below (doesn't change)
-			CDenseMatrix64F StaticB = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
-			CCommonOps.subtract(COverH, GOverTwo, StaticB);
+			CDenseMatrix64F BStatic = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			CCommonOps.subtract(COverH, GOverTwo, BStatic);
 			
 			//initialize XPreviousTimePoint with zeros
 			CDenseMatrix64F XPreviousTimePoint = X.copy();
+			BPreviousTimePoint = B.copy();
 			
 			LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+			solver.setA(AStatic);
 			
-			//Solve Ax=B with StaticA, XNew, Bnew
 			for(int i = 0; i < numSteps; i++){
-				BCurrentTimePoint = B;
+				BCurrentTimePoint = B.copy();
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
 					vPulseValue = ((amplitude/riseTime)*currentTime);
@@ -553,15 +559,15 @@ public class Netlist{
 				CCommonOps.add(BCurrentTimePoint, BPreviousTimePoint, BDynamic);
 				CCommonOps.elementDivide(BDynamic, 2, 0, BDynamic);
 				//BDynamic = (B(tk)+B(tk-1))/2 + ((C/h)-(G/2))*X(tk-1)
-				CCommonOps.multAdd(StaticB, XPreviousTimePoint, BDynamic);
+				CCommonOps.multAdd(BStatic, XPreviousTimePoint, BDynamic);
 				// LU decomposition, Solve for this time point
-				solver.setA(StaticA);
-				solver.solve(BDynamic, XCurrent);
-				magnitude = XCurrent.getReal(nodeToTrack, 0);
+				
+				solver.solve(BDynamic, XCurrentTimePoint);
+				magnitude = XCurrentTimePoint.getReal(nodeToTrack, 0);
 				writer.println(currentTime + "\t" + magnitude);
 				//set XPreviousTimePoint to the solution we just calculated in XCurrent
-				XPreviousTimePoint = XCurrent.copy();
-				BPreviousTimePoint = BCurrentTimePoint;
+				XPreviousTimePoint = XCurrentTimePoint.copy();
+				BPreviousTimePoint = BCurrentTimePoint.copy();
 				currentTime += stepSize;
 			}
 			System.setOut(orig);
