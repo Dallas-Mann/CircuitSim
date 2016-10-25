@@ -303,8 +303,8 @@ public class Netlist{
 				case DC:
 					break;
 				case TIME:
-					solveTimeBackwardEuler(fileName);
-					//solveTimeTrapezoidalRule(fileName);
+					//solveTimeBackwardEuler(fileName);
+					solveTimeTrapezoidalRule(fileName);
 					break;
 			}
 		}
@@ -434,8 +434,7 @@ public class Netlist{
 			CDenseMatrix64F XPreviousTimePoint = X.copy();
 			
 			LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
-			LinearSolverSafe<CDenseMatrix64F> safeSolver = new LinearSolverSafe<CDenseMatrix64F>(solver);
-			safeSolver.setA(AStatic);
+			solver.setA(AStatic);
 			
 			//initialize these matrices to the correct dimensions
 			CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
@@ -443,8 +442,9 @@ public class Netlist{
 			CDenseMatrix64F XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
 			
 			for(int i = 0; i < numSteps; i++){
-				BDynamic = XPreviousTimePoint.copy();
-				BCurrentTimePoint = B.copy();
+				//Small signal analysis sets all DC sources to ground, so this is commented out
+				//BCurrentTimePoint = B.copy();
+				clearMatrix(BCurrentTimePoint);
 				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
@@ -461,15 +461,15 @@ public class Netlist{
 				}
 				//set BWithSourceVals with the correct voltage value for the pulse input
 				BCurrentTimePoint.set(VPulseNewIndex, 0, vPulseValue, 0);
-				
 				CCommonOps.mult(COverH, XPreviousTimePoint, BDynamic);
 				CCommonOps.add(BCurrentTimePoint, BDynamic, BCurrentTimePoint);
 				// LU decomposition, Solve for this time point
-				safeSolver.solve(BCurrentTimePoint, XCurrent);
+				solver.solve(BCurrentTimePoint, XCurrent);
 				magnitude = XCurrent.getReal(nodeToTrack, 0);
 				writer.println(currentTime + "\t" + magnitude);
 				//set XPreviousTimePoint to the solution we just calculated in XCurrent
 				XPreviousTimePoint = XCurrent.copy();
+				XCurrent = X.copy();
 				currentTime += stepSize;
 			}
 			System.setOut(orig);
@@ -533,13 +533,15 @@ public class Netlist{
 			
 			//initialize XPreviousTimePoint with zeros
 			CDenseMatrix64F XPreviousTimePoint = X.copy();
-			BPreviousTimePoint = B.copy();
+			//BPreviousTimePoint = B.copy();
 			
 			LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
 			solver.setA(AStatic);
 			
 			for(int i = 0; i < numSteps; i++){
-				BCurrentTimePoint = B.copy();
+				//Small signal analysis sets all DC sources to ground, so this is commented out
+				//BCurrentTimePoint = B.copy();
+				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
 					vPulseValue = ((amplitude/riseTime)*currentTime);
@@ -579,6 +581,14 @@ public class Netlist{
 		}
 	}
 	
+	private void clearMatrix(CDenseMatrix64F matrix){
+		for(int rowIndex = 0, numRows = matrix.numRows; rowIndex < numRows; rowIndex++){
+			for(int colIndex = 0, numCols = matrix.numCols; colIndex < numCols; colIndex++){
+				matrix.set(rowIndex, colIndex, 0, 0);
+			}
+		}
+	}
+	
 	public double calcMagnitude(int row, int col, CDenseMatrix64F matrix){
 		double real = matrix.getReal(row, col);
 		double imaginary = matrix.getImaginary(row, col);
@@ -613,7 +623,7 @@ public class Netlist{
 		B.print();
 	}
 	
-	void printConvert(CDenseMatrix64F matrix){
+	public void printConvert(CDenseMatrix64F matrix){
 		int numRows = matrix.numRows;
 		int numCols = matrix.numCols;
 		DenseMatrix64F temp = new DenseMatrix64F(numRows, numCols);
@@ -628,10 +638,20 @@ public class Netlist{
 		System.out.println();
 	}
 	
-	void printAll(){
+	public void printAll(){
 			printConvert(G);
 			printConvert(C);
 			printConvert(X);
 			printConvert(B);
 	}
+	
+	public void printMatrixToWriter(CDenseMatrix64F matrix, PrintStream writer){
+		for(int rowIndex = 0, numRows = matrix.numRows; rowIndex < numRows; rowIndex++){
+			for(int colIndex = 0, numCols = matrix.numCols; colIndex < numCols; colIndex++){
+				writer.print(matrix.getReal(rowIndex, colIndex) + " ");
+			}
+			writer.print("\n");
+		}
+	}
+	
 }
