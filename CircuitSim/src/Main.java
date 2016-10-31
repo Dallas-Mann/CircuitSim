@@ -13,7 +13,7 @@ public class Main {
 		netlist.prettyPrintNetlist();
 		netlist.populateMatricies();
 		//netlist.prettyPrintMatrices();
-		netlist.printAll();
+		//netlist.printAll();
 		netlist.simulate(args[1]);
 	}
 }
