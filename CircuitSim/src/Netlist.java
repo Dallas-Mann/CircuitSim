@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
-import org.ejml.alg.dense.linsol.LinearSolverSafe;
 import org.ejml.data.CDenseMatrix64F;
 import org.ejml.data.DenseMatrix64F;
 import org.ejml.factory.CLinearSolverFactory;
@@ -461,7 +460,7 @@ public class Netlist{
 			
 			for(int i = 0; i < numSteps; i++){
 				//Small signal analysis sets all DC sources to ground, so this is commented out
-				BCurrentTimePoint = B.copy();
+				//BCurrentTimePoint = B.copy();
 				clearMatrix(BCurrentTimePoint);
 				
 				//calculate VPulse value
