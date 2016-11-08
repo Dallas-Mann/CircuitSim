@@ -196,6 +196,10 @@ public class Netlist{
 				newComponent = new VPulse(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
 						convert(tokens[4]), convert(tokens[5]), convert(tokens[6]), convert(tokens[7]), Integer.parseInt(tokens[8]));
 				break;
+			case 's':
+				newComponent = new VStep(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
+						convert(tokens[4]), convert(tokens[5]), convert(tokens[6]), Integer.parseInt(tokens[7]));
+				break;
 			default:
 				Utilities.usage(3);
 				System.exit(-1);
@@ -283,6 +287,9 @@ public class Netlist{
 			else if(c instanceof VPulse){
 				((VPulse)c).newIndex = newIndex++;
 			}
+			else if(c instanceof VStep){
+				((VStep)c).newIndex = newIndex++;
+			}
 		}
 	}
 
@@ -299,12 +306,12 @@ public class Netlist{
 				case FREQ:
 					solveFrequency(fileName);
 					break;
-				//TODO
+				//TODO implement DC simulation(Transient at a single time point) 
 				case DC:
 					break;
 				case TIME:
-					//solveTimeBackwardEuler(fileName);
-					solveTimeTrapezoidalRule(fileName);
+					solveTimeBackwardEuler(fileName);
+					//solveTimeTrapezoidalRule(fileName);
 					break;
 			}
 		}
@@ -395,7 +402,7 @@ public class Netlist{
 	
 	//not accounting for non-linear elements
 	public void solveTimeBackwardEuler(String fileName){
-		int VPulseNewIndex = 0;
+		int VNewIndex = 0;
 		double stepSize = 0;
 		double currentTime = 0;
 		double numSteps = 0;
@@ -405,17 +412,28 @@ public class Netlist{
 		double magnitude = 0;
 		double vPulseValue = 0;
 		
-		// can only sweep one VPulse source at the moment
+		// can only sweep one VPulse/VStep source at the moment
 		for(Component c : circuitElements){
 			if(c instanceof VPulse){
 				VPulse temp = (VPulse)c;
-				VPulseNewIndex = temp.newIndex;
+				VNewIndex = temp.newIndex;
 				stepSize = (temp.maxTime - temp.minTime) / temp.numSteps;
 				currentTime = temp.minTime;
 				numSteps = temp.numSteps;
 				amplitude = temp.amplitude;
 				riseTime = temp.riseTime;
 				pulseWidth = temp.pulseWidth;
+				break;
+			}
+			else if(c instanceof VStep){
+				VStep temp = (VStep)c;
+				VNewIndex = temp.newIndex;
+				stepSize = (temp.maxTime - temp.minTime) / temp.numSteps;
+				currentTime = temp.minTime;
+				numSteps = temp.numSteps;
+				amplitude = temp.amplitude;
+				riseTime = temp.riseTime;
+				pulseWidth = temp.maxTime;
 				break;
 			}
 		}
@@ -443,7 +461,7 @@ public class Netlist{
 			
 			for(int i = 0; i < numSteps; i++){
 				//Small signal analysis sets all DC sources to ground, so this is commented out
-				//BCurrentTimePoint = B.copy();
+				BCurrentTimePoint = B.copy();
 				clearMatrix(BCurrentTimePoint);
 				
 				//calculate VPulse value
@@ -460,7 +478,7 @@ public class Netlist{
 					vPulseValue = 0;
 				}
 				//set BWithSourceVals with the correct voltage value for the pulse input
-				BCurrentTimePoint.set(VPulseNewIndex, 0, vPulseValue, 0);
+				BCurrentTimePoint.set(VNewIndex, 0, vPulseValue, 0);
 				CCommonOps.mult(COverH, XPreviousTimePoint, BDynamic);
 				CCommonOps.add(BCurrentTimePoint, BDynamic, BCurrentTimePoint);
 				// LU decomposition, Solve for this time point
@@ -483,7 +501,7 @@ public class Netlist{
 	
 	//not accounting for non-linear elements
 	public void solveTimeTrapezoidalRule(String fileName){
-		int VPulseNewIndex = 0;
+		int VNewIndex = 0;
 		double stepSize = 0;
 		double currentTime = 0;
 		double numSteps = 0;
@@ -497,13 +515,24 @@ public class Netlist{
 		for(Component c : circuitElements){
 			if(c instanceof VPulse){
 				VPulse temp = (VPulse)c;
-				VPulseNewIndex = temp.getNewIndex();
+				VNewIndex = temp.getNewIndex();
 				stepSize = (temp.maxTime - temp.minTime) / temp.numSteps;
 				currentTime = temp.minTime;
 				numSteps = temp.numSteps;
 				amplitude = temp.amplitude;
 				riseTime = temp.riseTime;
 				pulseWidth = temp.pulseWidth;
+				break;
+			}
+			else if(c instanceof VStep){
+				VStep temp = (VStep)c;
+				VNewIndex = temp.newIndex;
+				stepSize = (temp.maxTime - temp.minTime) / temp.numSteps;
+				currentTime = temp.minTime;
+				numSteps = temp.numSteps;
+				amplitude = temp.amplitude;
+				riseTime = temp.riseTime;
+				pulseWidth = temp.maxTime;
 				break;
 			}
 		}
@@ -556,7 +585,7 @@ public class Netlist{
 					vPulseValue = 0;
 				}
 				//set BCurrentTimePoint with the correct voltage value for the pulse input
-				BCurrentTimePoint.set(VPulseNewIndex, 0, vPulseValue, 0);
+				BCurrentTimePoint.set(VNewIndex, 0, vPulseValue, 0);
 				//BDynamic = (B(tk)+B(tk-1))/2
 				CCommonOps.add(BCurrentTimePoint, BPreviousTimePoint, BDynamic);
 				CCommonOps.elementDivide(BDynamic, 2, 0, BDynamic);
