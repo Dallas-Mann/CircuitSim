@@ -9,7 +9,6 @@ public class VStep implements Component{
 	protected int newIndex;
 	protected double amplitude;
 	protected double riseTime;
-	protected double pulseWidth;
 	protected double minTime;
 	protected double maxTime;
 	protected int numSteps;

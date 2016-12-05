@@ -231,6 +231,8 @@ public class Netlist{
 			double baseNum = Double.parseDouble(value[0]);
 			
 			switch(value[1].toLowerCase()){
+				case "a":
+					return baseNum *= Math.pow(10, -18);
 				case "f":
 					return baseNum *= Math.pow(10, -15);
 				case "p":
