@@ -311,8 +311,8 @@ public class Netlist{
 				case DC:
 					break;
 				case TIME:
-					solveTimeBackwardEuler(fileName);
-					//solveTimeTrapezoidalRule(fileName);
+					//solveTimeBackwardEuler(fileName);
+					solveTimeTrapezoidalRule(fileName);
 					break;
 			}
 		}
@@ -462,8 +462,8 @@ public class Netlist{
 			
 			for(int i = 0; i < numSteps; i++){
 				//Small signal analysis sets all DC sources to ground, so this is commented out
-				//BCurrentTimePoint = B.copy();
-				clearMatrix(BCurrentTimePoint);
+				BCurrentTimePoint = B.copy();
+				//clearMatrix(BCurrentTimePoint);
 				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
@@ -570,7 +570,7 @@ public class Netlist{
 			
 			for(int i = 0; i < numSteps; i++){
 				//Small signal analysis sets all DC sources to ground, so this is commented out
-				//BCurrentTimePoint = B.copy();
+				BCurrentTimePoint = B.copy();
 				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
