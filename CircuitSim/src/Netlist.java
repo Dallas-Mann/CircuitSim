@@ -336,6 +336,9 @@ public class Netlist{
 				numSteps = temp.numSteps;
 				break;
 			}
+			else{
+				circuitElements.remove(c);
+			}
 		}
 				
 		try{
@@ -437,6 +440,9 @@ public class Netlist{
 				pulseWidth = temp.maxTime;
 				break;
 			}
+			else{
+				circuitElements.remove(c);
+			}
 		}
 				
 		try{
@@ -535,6 +541,9 @@ public class Netlist{
 				riseTime = temp.riseTime;
 				pulseWidth = temp.maxTime;
 				break;
+			}
+			else{
+				circuitElements.remove(c);
 			}
 		}
 				
