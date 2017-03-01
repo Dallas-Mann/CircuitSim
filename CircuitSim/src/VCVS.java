@@ -33,8 +33,8 @@ public class VCVS implements Component{
 		int indexThree = nodeThree-1;
 		int indexFour = nodeFour-1;
 		if(!(nodeOne == 0 || nodeTwo == 0)){
-			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) - gain);
-			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) + gain);
+			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) + gain);
+			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) - gain);
 		}
 		if(!(nodeThree == 0)){
 			G.setReal(newIndex, indexThree, G.getReal(newIndex, indexThree) + 1);

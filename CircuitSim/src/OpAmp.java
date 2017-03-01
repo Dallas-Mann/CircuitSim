@@ -7,20 +7,17 @@ public class OpAmp implements Component{
 	protected int nodeOne;
 	protected int nodeTwo;
 	protected int nodeThree;
-	protected int newIndex;
-	protected double gain;
+	protected int newIndex;	
 	
-	
-	public OpAmp(String id, int nodeOne, int nodeTwo, int nodeThree, double gain){
+	public OpAmp(String id, int nodeOne, int nodeTwo, int nodeThree){
 		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.nodeThree = nodeThree;
-		this.gain = gain;
 	}
 	
 	public String toString(){
-		return id + " " + nodeOne + " " + nodeTwo + " " + nodeThree + " " + newIndex + " " + gain;
+		return id + " " + nodeOne + " " + nodeTwo + " " + nodeThree + " " + newIndex;
 	}
 
 	@Override
@@ -32,6 +29,7 @@ public class OpAmp implements Component{
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
+		int indexThree = nodeThree-1;
 		
 		// clear row because we will divide it by the infinite gain
 		for(int tempIndex = 0, numCols = G.getNumCols(); tempIndex < numCols; tempIndex++){
@@ -39,14 +37,25 @@ public class OpAmp implements Component{
 		}
 		
 		// the gain divided by itself will result in -1 or 1
+		
 		if(!(nodeOne == 0 || nodeThree == 0)){
-			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) - 1);
+			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) + 1);
 		}
 		if(!(nodeTwo == 0 || nodeThree == 0)){
-			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) + 1);
+			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) - 1);
 		}
+		G.setReal(indexThree, newIndex, G.getReal(indexThree, newIndex) + 1);
+		
 		
 		/*
+		if(!(nodeOne == 0 || nodeThree == 0)){
+			G.setReal(indexThree, indexOne, G.getReal(indexThree, indexOne) + 1);
+		}
+		if(!(nodeTwo == 0 || nodeThree == 0)){
+			G.setReal(indexThree, indexTwo, G.getReal(indexThree, indexTwo) - 1);
+		}
+		
+		
 		// show changes in G Matrix to debug
 		System.out.println("Inserted Element " + this.id);
 		G.print();
@@ -75,5 +84,6 @@ public class OpAmp implements Component{
 	public int numCurrentsToAdd() {
 		// always add a current equation because we are modeling the OpAmp as a VCVS
 		return 1;
+		//return 0;
 	}
 }
