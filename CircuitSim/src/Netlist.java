@@ -14,6 +14,12 @@ import org.ejml.factory.CLinearSolverFactory;
 import org.ejml.interfaces.linsol.LinearSolver;
 import org.ejml.ops.CCommonOps;
 
+import cern.colt.matrix.tdcomplex.algo.SparseDComplexAlgebra;
+import cern.colt.matrix.tdcomplex.algo.decomposition.SparseDComplexLUDecomposition;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix1D;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix2D;
+import cern.jet.math.tdcomplex.DComplexFunctions;
+
 public class Netlist{
 	
 	public enum solutionType{
@@ -26,10 +32,10 @@ public class Netlist{
 	// using EJML for matrix manipulation
 	// Modified Nodal Analysis equation we wish to solve:
 	// [G][X] + [C] d[X]/dt = [B]
-	private CDenseMatrix64F G;
-	private CDenseMatrix64F X;
-	private CDenseMatrix64F C;
-	private CDenseMatrix64F B;
+	private SparseDComplexMatrix2D G;
+	private SparseDComplexMatrix1D X;
+	private SparseDComplexMatrix2D C;
+	private SparseDComplexMatrix1D B;
 	
 	// used to calculate matrix sizes before hand so we don't have to resize them repeatedly
 	private int numVoltages;
@@ -49,10 +55,10 @@ public class Netlist{
 		numVoltages = 0;
 		numCurrents = 0;
 		// for now initialize to zero
-		G = new CDenseMatrix64F(0, 0);
-		X = new CDenseMatrix64F(0, 0);
-		C = new CDenseMatrix64F(0, 0);
-		B = new CDenseMatrix64F(0, 0);
+		G = new SparseDComplexMatrix2D(0, 0);
+		X = new SparseDComplexMatrix1D(0);
+		C = new SparseDComplexMatrix2D(0, 0);
+		B = new SparseDComplexMatrix1D(0);
 	}
 	
 	protected void incrVoltages(int amount){
@@ -66,10 +72,10 @@ public class Netlist{
 	// sets all the relevant matrix sizes after reading in netlist
 	private void resizeMatrices(){
 		int size = numVoltages + numCurrents;
-		G.reshape(size, size);
-		X.reshape(size, 1);
-		C.reshape(size, size);
-		B.reshape(size, 1);
+		G = new SparseDComplexMatrix2D(size, size);
+		X = new SparseDComplexMatrix1D(size);
+		C = new SparseDComplexMatrix2D(size, size);
+		B = new SparseDComplexMatrix1D(size);
 	}
 	
 	protected void readNetlist(String fileName){
@@ -184,12 +190,11 @@ public class Netlist{
 						Integer.parseInt(tokens[4]), convert(tokens[5]), convert(tokens[6]), convert(tokens[7]));
 				break;
 			case 'o':
-				newComponent = new OpAmp(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]), 
-						convert(tokens[4]));
+				newComponent = new OpAmp(tokens[0], nodeOne, nodeTwo, Integer.parseInt(tokens[3]));
 				break;
 			case 'a':
 				newComponent = new VAC(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
-						convert(tokens[4]), convert(tokens[5]), convert(tokens[6]), Integer.parseInt(tokens[7]));
+						convert(tokens[4]), convert(tokens[5]), Integer.parseInt(tokens[6]));
 				break;
 			case 'p':
 				newComponent = new VPulse(tokens[0], nodeOne, nodeTwo, convert(tokens[3]), 
@@ -311,8 +316,8 @@ public class Netlist{
 				case DC:
 					break;
 				case TIME:
-					//solveTimeBackwardEuler(fileName);
-					solveTimeTrapezoidalRule(fileName);
+					solveTimeBackwardEuler(fileName);
+					//solveTimeTrapezoidalRule(fileName);
 					break;
 			}
 		}
@@ -345,55 +350,61 @@ public class Netlist{
 			PrintStream writer = new PrintStream(fileName);
 			PrintStream orig = System.out;
 			
-			CDenseMatrix64F BNew;
-			CDenseMatrix64F XNew;
+			SparseDComplexMatrix1D BNew;
+			SparseDComplexMatrix1D XNew;
 			
 			// have to assign stdout stream to file
 			System.setOut(writer);
 			
 			for(int i = 0; i < numSteps; i++){
 				// initialize new matrices to store G+SC, B, and X, so original matrices are not modified
-				CDenseMatrix64F GPlusSC = new CDenseMatrix64F(C.numRows, C.numCols);
+				SparseDComplexMatrix2D GPlusSC = new SparseDComplexMatrix2D(C.rows(), C.columns());
 				// initialize BNew and XNew
 				BNew = B;
 				XNew = X;
 				double wSweep = 2 * Math.PI * currentFreq;
 
 				// create S for the current frequency
-				Complex s = new Complex(0, wSweep);
+				//Complex s = new Complex(0, wSweep);
+				double[] s = {0, wSweep};
 				
 				// remove dc value from b if f != 0
-				for(int index = 0; index < BNew.getNumRows(); index++){
+				for(int index = 0; index < BNew.size(); index++){
 					//keep dc component at f=0Hz
 					if(currentFreq != 0){
 						if(index != VACNewIndex){
-							BNew.set(index, 0, 0, 0);
+							BNew.set(index, 0, 0);
 						}
 					}
 				}
 				
 				// set GPlusSC to S*C
-				CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), GPlusSC);
+				//CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), GPlusSC);
+				GPlusSC.assign(C);
+				GPlusSC.assign(DComplexFunctions.mult(s));
+				
 				// set GPlusSC to (G + SC)
-				CCommonOps.add(G, GPlusSC, GPlusSC);
+				//CCommonOps.add(G, GPlusSC, GPlusSC);
+				
+				GPlusSC.assign(G, DComplexFunctions.plus);
+				
 				
 				// LU decomposition
-				LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
-				// Solve for this frequency
-				solver.setA(GPlusSC);
-				solver.solve(BNew, XNew);
+				//LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+				SparseDComplexAlgebra solver = new SparseDComplexAlgebra();
+				SparseDComplexLUDecomposition lu = solver.lu(GPlusSC, 1);
 				
-				magnitude = calcMagnitude(nodeToTrack, 0, XNew);
-				phase = calcPhase(nodeToTrack, 0, XNew);
+				// Solve for this frequency
+				//solver.setA(GPlusSC);
+				//solver.solve(BNew, XNew);
+				solver.solve(GPlusSC, BNew);
+				
+				magnitude = calcMagnitude(nodeToTrack, XNew);
+				phase = calcPhase(nodeToTrack, XNew);
 				
 				writer.println(currentFreq + "\t" + magnitude + "\t" + phase);
 				// next step, increase frequency
-				if(i < numSteps / 10){
-					currentFreq += 0.1 * stepSize;
-				}
-				else{
-					currentFreq += stepSize;
-				}
+				currentFreq += stepSize;
 			}
 			System.setOut(orig);
 			writer.close();
@@ -450,8 +461,8 @@ public class Netlist{
 			PrintStream orig = System.out;
 			
 			// AStatic = G+(C/h), set below (doesn't change)
-			CDenseMatrix64F COverH = new CDenseMatrix64F(C.getNumRows(), C.getNumCols());
-			CDenseMatrix64F AStatic = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
+			SparseDComplexMatrix2D COverH = new SparseDComplexMatrix2D(C.rows(), C.columns());
+			SparseDComplexMatrix2D AStatic = new SparseDComplexMatrix2D(G.rows(), G.columns());
 			CCommonOps.elementDivide(C, stepSize, 0, COverH);
 			CCommonOps.add(G, COverH, AStatic);
 			
@@ -620,23 +631,17 @@ public class Netlist{
 		}
 	}
 	
-	private void clearMatrix(CDenseMatrix64F matrix){
-		for(int rowIndex = 0, numRows = matrix.numRows; rowIndex < numRows; rowIndex++){
-			for(int colIndex = 0, numCols = matrix.numCols; colIndex < numCols; colIndex++){
-				matrix.set(rowIndex, colIndex, 0, 0);
-			}
-		}
-	}
-	
-	public double calcMagnitude(int row, int col, CDenseMatrix64F matrix){
-		double real = matrix.getReal(row, col);
-		double imaginary = matrix.getImaginary(row, col);
+	public double calcMagnitude(int row, SparseDComplexMatrix1D matrix){
+		double[] value = matrix.get(row);
+		double real = value[0];
+		double imaginary = value[1];
 		return Math.sqrt((real * real)+(imaginary * imaginary));
 	}
 	
-	public double calcPhase(int row, int col, CDenseMatrix64F matrix){
-		double real = matrix.getReal(row, col);
-		double imaginary = matrix.getImaginary(row, col);
+	public double calcPhase(int row, SparseDComplexMatrix1D matrix){
+		double[] value = matrix.get(row);
+		double real = value[0];
+		double imaginary = value[1];
 		return Math.atan(imaginary/real);
 	}
 	
@@ -646,20 +651,6 @@ public class Netlist{
 			System.out.println(c.toString());
 		}
 		System.out.println();
-	}
-	
-	public void prettyPrintMatrices(){
-		System.out.println("G Matrix");
-		G.print();
-		System.out.println();
-		System.out.println("X Matrix");
-		X.print();
-		System.out.println();
-		System.out.println("C Matrix");
-		C.print();
-		System.out.println();
-		System.out.println("B Matrix");
-		B.print();
 	}
 	
 	public void printConvert(CDenseMatrix64F matrix){
@@ -675,13 +666,6 @@ public class Netlist{
 			System.out.println();
 		}
 		System.out.println();
-	}
-	
-	public void printAll(){
-			printConvert(G);
-			printConvert(C);
-			printConvert(X);
-			printConvert(B);
 	}
 	
 	public void printMatrixToWriter(CDenseMatrix64F matrix, PrintStream writer){
