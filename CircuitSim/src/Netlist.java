@@ -463,23 +463,31 @@ public class Netlist{
 			// AStatic = G+(C/h), set below (doesn't change)
 			SparseDComplexMatrix2D COverH = new SparseDComplexMatrix2D(C.rows(), C.columns());
 			SparseDComplexMatrix2D AStatic = new SparseDComplexMatrix2D(G.rows(), G.columns());
-			CCommonOps.elementDivide(C, stepSize, 0, COverH);
-			CCommonOps.add(G, COverH, AStatic);
+			//CCommonOps.elementDivide(C, stepSize, 0, COverH);
+			//CCommonOps.add(G, COverH, AStatic);
+			COverH.assign(C);
+			COverH.assign(DComplexFunctions.div(stepSize));
 			
 			//initialize XPreviousTimePoint with zeros
-			CDenseMatrix64F XPreviousTimePoint = X.copy();
+			//CDenseMatrix64F XPreviousTimePoint = X.copy();
+			SparseDComplexMatrix1D XPreviousTimePoint = new SparseDComplexMatrix1D(X.toArray());
 			
-			LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
-			solver.setA(AStatic);
+			//LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
+			//solver.setA(AStatic);
 			
 			//initialize these matrices to the correct dimensions
-			CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			CDenseMatrix64F BCurrentTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			CDenseMatrix64F XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+			//CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			//CDenseMatrix64F BCurrentTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
+			//CDenseMatrix64F XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+			SparseDComplexMatrix1D BDynamic = new SparseDComplexMatrix1D((int)B.size());
+			SparseDComplexMatrix1D BCurrentTimePoint = new SparseDComplexMatrix1D((int)B.size());
+			SparseDComplexMatrix1D XCurrent = new SparseDComplexMatrix1D((int)X.size());
+			
+			
 			
 			for(int i = 0; i < numSteps; i++){
 				//Small signal analysis sets all DC sources to ground, so this is commented out
-				BCurrentTimePoint = B.copy();
+				BCurrentTimePoint.assign(B);
 				//clearMatrix(BCurrentTimePoint);
 				
 				//calculate VPulse value
