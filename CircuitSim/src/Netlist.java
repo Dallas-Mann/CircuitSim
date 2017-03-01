@@ -469,7 +469,6 @@ public class Netlist{
 			for(int i = 0; i < numSteps; i++){
 				//Small signal analysis sets all DC sources to ground, so this is commented out
 				BCurrentTimePoint = B.copy();
-				//clearMatrix(BCurrentTimePoint);
 				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
@@ -617,14 +616,6 @@ public class Netlist{
 		catch (Exception e){
 			System.out.println("Couldn't write to file.");
 			System.out.println(e);
-		}
-	}
-	
-	private void clearMatrix(CDenseMatrix64F matrix){
-		for(int rowIndex = 0, numRows = matrix.numRows; rowIndex < numRows; rowIndex++){
-			for(int colIndex = 0, numCols = matrix.numCols; colIndex < numCols; colIndex++){
-				matrix.set(rowIndex, colIndex, 0, 0);
-			}
 		}
 	}
 	
