@@ -13,12 +13,11 @@ public class VAC implements Component{
 	protected double maxFrequency;
 	protected int numSteps;
 
-	public VAC(String id, int nodeOne, int nodeTwo, double amplitude, double frequency, double minFrequency, double maxFrequency, int numSteps){
+	public VAC(String id, int nodeOne, int nodeTwo, double amplitude, double minFrequency, double maxFrequency, int numSteps){
 		this.id = id;
 		this.nodeOne = nodeOne;
 		this.nodeTwo = nodeTwo;
 		this.amplitude = amplitude;
-		this.frequency = frequency;
 		this.minFrequency = minFrequency;
 		this.maxFrequency = maxFrequency;
 		this.numSteps = numSteps;
