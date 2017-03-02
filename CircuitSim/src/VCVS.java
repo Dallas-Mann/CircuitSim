@@ -1,6 +1,6 @@
 import java.util.List;
-
-import org.ejml.data.CDenseMatrix64F;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix1D;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix2D;
 
 public class VCVS implements Component{
 	protected String id;
@@ -25,32 +25,41 @@ public class VCVS implements Component{
 	}
 	
 	@Override
-	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
+	public void insertStamp(SparseDComplexMatrix2D G, SparseDComplexMatrix1D X, SparseDComplexMatrix2D C, SparseDComplexMatrix1D B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		int indexThree = nodeThree-1;
 		int indexFour = nodeFour-1;
+		double[] val = new double[2];
 		if(!(nodeOne == 0 || nodeTwo == 0)){
-			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) + gain);
-			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) - gain);
+			val = G.getQuick(newIndex, indexOne);
+			val[0] += gain;
+			G.setQuick(newIndex, indexOne, val);
+			
+			val = G.getQuick(newIndex, indexTwo);
+			val[0] -= gain;
+			G.setQuick(newIndex, indexTwo, val);
 		}
 		if(!(nodeThree == 0)){
-			G.setReal(newIndex, indexThree, G.getReal(newIndex, indexThree) + 1);
-			G.setReal(indexThree, newIndex, G.getReal(indexThree, newIndex) + 1);
+			val = G.getQuick(newIndex, indexThree);
+			val[0] += 1;
+			G.setQuick(newIndex, indexThree, val);
+			
+			val = G.getQuick(indexThree, newIndex);
+			val[0] += 1;
+			G.setQuick(indexThree, newIndex, val);
 		}
 		if(!(nodeFour == 0)){
-			G.setReal(newIndex, indexFour, G.getReal(newIndex, indexFour) - 1);
-			G.setReal(indexFour, newIndex, G.getReal(indexFour, newIndex) - 1);
+			val = G.getQuick(newIndex, indexFour);
+			val[0] -= 1;
+			G.setQuick(newIndex, indexFour, val);
+			
+			val = G.getQuick(indexFour, newIndex);
+			val[0] -= 1;
+			G.setQuick(indexFour, newIndex, val);
 		}
-		
-		/*
-		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id);
-		G.print();
-		C.print();
-		*/
 	}
 
 	@Override

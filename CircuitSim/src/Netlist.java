@@ -3,21 +3,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.complex.Complex;
-import org.ejml.data.CDenseMatrix64F;
-import org.ejml.data.DenseMatrix64F;
-import org.ejml.factory.CLinearSolverFactory;
-import org.ejml.interfaces.linsol.LinearSolver;
-import org.ejml.ops.CCommonOps;
-
 import cern.colt.matrix.tdcomplex.algo.SparseDComplexAlgebra;
 import cern.colt.matrix.tdcomplex.algo.decomposition.SparseDComplexLUDecomposition;
+import cern.colt.matrix.tdcomplex.impl.DenseDComplexMatrix1D;
+import cern.colt.matrix.tdcomplex.impl.SparseCCDComplexMatrix2D;
 import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix1D;
 import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix2D;
+import cern.colt.matrix.tdcomplex.impl.SparseRCDComplexMatrix2D;
 import cern.jet.math.tdcomplex.DComplexFunctions;
 
 public class Netlist{
@@ -379,25 +374,18 @@ public class Netlist{
 				}
 				
 				// set GPlusSC to S*C
-				//CCommonOps.elementMultiply(C, s.getReal(), s.getImaginary(), GPlusSC);
 				GPlusSC.assign(C);
 				GPlusSC.assign(DComplexFunctions.mult(s));
 				
 				// set GPlusSC to (G + SC)
-				//CCommonOps.add(G, GPlusSC, GPlusSC);
-				
 				GPlusSC.assign(G, DComplexFunctions.plus);
 				
-				
 				// LU decomposition
-				//LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
 				SparseDComplexAlgebra solver = new SparseDComplexAlgebra();
-				SparseDComplexLUDecomposition lu = solver.lu(GPlusSC, 1);
+				//SparseDComplexLUDecomposition lu = solver.lu(GPlusSC, 1);
 				
 				// Solve for this frequency
-				//solver.setA(GPlusSC);
-				//solver.solve(BNew, XNew);
-				solver.solve(GPlusSC, BNew);
+				XNew = (SparseDComplexMatrix1D) solver.solve(GPlusSC, BNew);
 				
 				magnitude = calcMagnitude(nodeToTrack, XNew);
 				phase = calcPhase(nodeToTrack, XNew);
@@ -462,33 +450,28 @@ public class Netlist{
 			
 			// AStatic = G+(C/h), set below (doesn't change)
 			SparseDComplexMatrix2D COverH = new SparseDComplexMatrix2D(C.rows(), C.columns());
-			SparseDComplexMatrix2D AStatic = new SparseDComplexMatrix2D(G.rows(), G.columns());
-			//CCommonOps.elementDivide(C, stepSize, 0, COverH);
-			//CCommonOps.add(G, COverH, AStatic);
+			SparseRCDComplexMatrix2D AStatic = new SparseRCDComplexMatrix2D(G.rows(), G.columns());
+			
 			COverH.assign(C);
 			COverH.assign(DComplexFunctions.div(stepSize));
 			
+			AStatic.assign(G);
+			AStatic.assign(COverH, DComplexFunctions.plus);
+						
 			//initialize XPreviousTimePoint with zeros
-			//CDenseMatrix64F XPreviousTimePoint = X.copy();
-			SparseDComplexMatrix1D XPreviousTimePoint = new SparseDComplexMatrix1D(X.toArray());
-			
-			//LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
-			//solver.setA(AStatic);
+			SparseDComplexMatrix1D XPreviousTimePoint = new SparseDComplexMatrix1D((int)X.size());
 			
 			//initialize these matrices to the correct dimensions
-			//CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			//CDenseMatrix64F BCurrentTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			//CDenseMatrix64F XCurrent = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
 			SparseDComplexMatrix1D BDynamic = new SparseDComplexMatrix1D((int)B.size());
 			SparseDComplexMatrix1D BCurrentTimePoint = new SparseDComplexMatrix1D((int)B.size());
 			SparseDComplexMatrix1D XCurrent = new SparseDComplexMatrix1D((int)X.size());
 			
-			
+			SparseDComplexAlgebra solver = new SparseDComplexAlgebra();
+			//SparseDComplexLUDecomposition lu;
 			
 			for(int i = 0; i < numSteps; i++){
 				//Small signal analysis sets all DC sources to ground, so this is commented out
 				BCurrentTimePoint.assign(B);
-				//clearMatrix(BCurrentTimePoint);
 				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
@@ -503,17 +486,33 @@ public class Netlist{
 				else{
 					vPulseValue = 0;
 				}
+				
 				//set BWithSourceVals with the correct voltage value for the pulse input
-				BCurrentTimePoint.set(VNewIndex, 0, vPulseValue, 0);
-				CCommonOps.mult(COverH, XPreviousTimePoint, BDynamic);
-				CCommonOps.add(BCurrentTimePoint, BDynamic, BCurrentTimePoint);
+				BCurrentTimePoint.set(VNewIndex, vPulseValue, 0);
+				COverH.zMult(XPreviousTimePoint, BDynamic);
+				BCurrentTimePoint.assign(BDynamic, DComplexFunctions.plus);
+				
+				/*
+				System.out.println("G: " + G.rows() + " " + G.columns() + " " + G.cardinality());
+				System.out.println("C: " + C.rows() + " " + C.columns() + " " + C.cardinality());
+				System.out.println("X: " + X.size() + " " + X.cardinality());
+				System.out.println("B: " + B.size() + " " + B.cardinality());
+				System.out.println("COverH: " + COverH.rows() + " " + COverH.columns() + " " + COverH.cardinality());
+				System.out.println("AStatic: " + AStatic.rows() + " " + AStatic.columns() + " " + AStatic.cardinality());
+				*/
+				
 				// LU decomposition, Solve for this time point
-				solver.solve(BCurrentTimePoint, XCurrent);
-				magnitude = XCurrent.getReal(nodeToTrack, 0);
+				AStatic.trimToSize();
+				BCurrentTimePoint.trimToSize();
+				
+				XCurrent = (SparseDComplexMatrix1D) solver.solve(AStatic, BCurrentTimePoint);
+				
+				double[] val = XCurrent.get(nodeToTrack);
+				magnitude = val[0];
 				writer.println(currentTime + "\t" + magnitude);
 				//set XPreviousTimePoint to the solution we just calculated in XCurrent
-				XPreviousTimePoint = XCurrent.copy();
-				XCurrent = X.copy();
+				XPreviousTimePoint.assign(XCurrent);
+				XCurrent.assign(X);
 				currentTime += stepSize;
 			}
 			System.setOut(orig);
@@ -571,34 +570,38 @@ public class Netlist{
 			PrintStream orig = System.out;
 			
 			//initialize these matrices to the correct dimensions
-			CDenseMatrix64F BDynamic = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			CDenseMatrix64F BCurrentTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			CDenseMatrix64F BPreviousTimePoint = new CDenseMatrix64F(B.getNumRows(), B.getNumCols());
-			CDenseMatrix64F XCurrentTimePoint = new CDenseMatrix64F(X.getNumRows(), X.getNumCols());
+			DenseDComplexMatrix1D BDynamic = new DenseDComplexMatrix1D((int) B.size());
+			DenseDComplexMatrix1D BDynamicTwo = new DenseDComplexMatrix1D((int) B.size());
+			DenseDComplexMatrix1D BCurrentTimePoint = new DenseDComplexMatrix1D((int) B.size());
+			DenseDComplexMatrix1D BPreviousTimePoint = new DenseDComplexMatrix1D((int) B.size());
+			DenseDComplexMatrix1D XCurrentTimePoint = new DenseDComplexMatrix1D((int) X.size());
 			
-			CDenseMatrix64F COverH = new CDenseMatrix64F(C.getNumRows(), C.getNumCols());
-			CDenseMatrix64F GOverTwo = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
-			CCommonOps.elementDivide(C, stepSize, 0, COverH);
-			CCommonOps.elementDivide(G, 2, 0, GOverTwo);
+			SparseDComplexMatrix2D COverH = new SparseDComplexMatrix2D(C.rows(), C.columns());
+			SparseDComplexMatrix2D GOverTwo = new SparseDComplexMatrix2D(G.rows(), G.columns());
+			//CCommonOps.elementDivide(C, stepSize, 0, COverH);
+			COverH.assign(DComplexFunctions.div(stepSize));
+			//CCommonOps.elementDivide(G, 2, 0, GOverTwo);
+			GOverTwo.assign(DComplexFunctions.div(2));
 			
 			// StaticA = (G/2)+(C/h), set below (doesn't change)
-			CDenseMatrix64F AStatic = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
-			CCommonOps.add(GOverTwo, COverH, AStatic);
+			SparseDComplexMatrix2D AStatic = new SparseDComplexMatrix2D(G.rows(), G.columns());
+			AStatic.assign(GOverTwo);
+			AStatic.assign(COverH, DComplexFunctions.plus);
 			
 			//StaticB = (C/h)-(G/2), set below (doesn't change)
-			CDenseMatrix64F BStatic = new CDenseMatrix64F(G.getNumRows(), G.getNumCols());
-			CCommonOps.subtract(COverH, GOverTwo, BStatic);
+			SparseDComplexMatrix2D BStatic = new SparseDComplexMatrix2D(G.rows(), G.columns());
+			BStatic.assign(COverH);
+			BStatic.assign(GOverTwo, DComplexFunctions.minus);
 			
 			//initialize XPreviousTimePoint with zeros
-			CDenseMatrix64F XPreviousTimePoint = X.copy();
+			DenseDComplexMatrix1D XPreviousTimePoint = new DenseDComplexMatrix1D((int)X.size());
 			//BPreviousTimePoint = B.copy();
 			
-			LinearSolver<CDenseMatrix64F> solver = CLinearSolverFactory.lu(numVoltages + numCurrents);
-			solver.setA(AStatic);
+			SparseDComplexAlgebra solver = new SparseDComplexAlgebra();
 			
 			for(int i = 0; i < numSteps; i++){
 				//Small signal analysis sets all DC sources to ground, so this is commented out
-				BCurrentTimePoint = B.copy();
+				BCurrentTimePoint.assign(B);
 				
 				//calculate VPulse value
 				if(0 <= currentTime && currentTime < riseTime){
@@ -614,20 +617,23 @@ public class Netlist{
 					vPulseValue = 0;
 				}
 				//set BCurrentTimePoint with the correct voltage value for the pulse input
-				BCurrentTimePoint.set(VNewIndex, 0, vPulseValue, 0);
+				BCurrentTimePoint.set(VNewIndex, vPulseValue, 0);
 				//BDynamic = (B(tk)+B(tk-1))/2
-				CCommonOps.add(BCurrentTimePoint, BPreviousTimePoint, BDynamic);
-				CCommonOps.elementDivide(BDynamic, 2, 0, BDynamic);
+				BDynamic.assign(BCurrentTimePoint);
+				BDynamic.assign(BPreviousTimePoint, DComplexFunctions.plus);
+				BDynamic.assign(DComplexFunctions.div(2));
 				//BDynamic = (B(tk)+B(tk-1))/2 + ((C/h)-(G/2))*X(tk-1)
-				CCommonOps.multAdd(BStatic, XPreviousTimePoint, BDynamic);
+				BStatic.zMult(XPreviousTimePoint, BDynamicTwo);
+				BDynamic.assign(BDynamicTwo, DComplexFunctions.plus);
 				// LU decomposition, Solve for this time point
+				XCurrentTimePoint = (DenseDComplexMatrix1D) solver.solve(AStatic, BDynamic);
 				
-				solver.solve(BDynamic, XCurrentTimePoint);
-				magnitude = XCurrentTimePoint.getReal(nodeToTrack, 0);
+				double[] val = XCurrentTimePoint.get(nodeToTrack);
+				magnitude = val[0];
 				writer.println(currentTime + "\t" + magnitude);
 				//set XPreviousTimePoint to the solution we just calculated in XCurrent
-				XPreviousTimePoint = XCurrentTimePoint.copy();
-				BPreviousTimePoint = BCurrentTimePoint.copy();
+				XPreviousTimePoint.assign(XCurrentTimePoint);
+				BPreviousTimePoint.assign(BCurrentTimePoint);
 				currentTime += stepSize;
 			}
 			System.setOut(orig);
@@ -660,29 +666,4 @@ public class Netlist{
 		}
 		System.out.println();
 	}
-	
-	public void printConvert(CDenseMatrix64F matrix){
-		int numRows = matrix.numRows;
-		int numCols = matrix.numCols;
-		DenseMatrix64F temp = new DenseMatrix64F(numRows, numCols);
-		CCommonOps.stripReal(matrix, temp);
-		DecimalFormat df = new DecimalFormat("#.#############");
-		for(int i = 0; i < numRows; i++){
-			for(int j = 0; j < numCols; j++){
-				System.out.print(String.format("%-20s", df.format(temp.get(i, j))));
-			}
-			System.out.println();
-		}
-		System.out.println();
-	}
-	
-	public void printMatrixToWriter(CDenseMatrix64F matrix, PrintStream writer){
-		for(int rowIndex = 0, numRows = matrix.numRows; rowIndex < numRows; rowIndex++){
-			for(int colIndex = 0, numCols = matrix.numCols; colIndex < numCols; colIndex++){
-				writer.print(matrix.getReal(rowIndex, colIndex) + " ");
-			}
-			writer.print("\n");
-		}
-	}
-	
 }

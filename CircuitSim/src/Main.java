@@ -12,6 +12,7 @@ public class Main {
 		//verify the netlist was read in and show all the components.
 		//netlist.prettyPrintNetlist();
 		netlist.populateMatricies();
+		System.out.println("Done populating matrices.");
 		//netlist.prettyPrintMatrices();
 		//netlist.printAll();
 		netlist.simulate(args[1]);

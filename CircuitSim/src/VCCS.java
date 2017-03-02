@@ -1,6 +1,6 @@
 import java.util.List;
-
-import org.ejml.data.CDenseMatrix64F;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix1D;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix2D;
 
 public class VCCS implements Component {
 	protected String id;
@@ -24,32 +24,34 @@ public class VCCS implements Component {
 	}
 	
 	@Override
-	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
+	public void insertStamp(SparseDComplexMatrix2D G, SparseDComplexMatrix1D X, SparseDComplexMatrix2D C, SparseDComplexMatrix1D B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		int indexThree = nodeThree-1;
 		int indexFour = nodeFour-1;
+		double[] val = new double[2];
 		if(!(nodeOne == 0 || nodeThree == 0)){
-			G.setReal(indexThree, indexOne, G.getReal(indexThree, indexOne) + gain);
+			val = G.getQuick(indexThree, indexOne);
+			val[0] += gain;
+			G.setQuick(indexThree, indexOne, val);
 		}
 		if(!(nodeTwo == 0 || nodeThree == 0)){
-			G.setReal(indexThree, indexTwo, G.getReal(indexThree, indexTwo) - gain);
+			val = G.getQuick(indexThree, indexTwo);
+			val[0] -= gain;
+			G.setQuick(indexThree, indexTwo, val);
 		}
 		if(!(nodeOne == 0 || nodeFour == 0)){
-			G.setReal(indexFour, indexOne, G.getReal(indexFour, indexOne) - gain);
+			val = G.getQuick(indexFour, indexOne);
+			val[0] -= gain;
+			G.setQuick(indexFour, indexOne, val);
 		}
 		if(!(nodeTwo == 0 || nodeFour == 0)){
-			G.setReal(indexFour, indexTwo, G.getReal(indexFour, indexTwo) + gain);
+			val = G.getQuick(indexFour, indexTwo);
+			val[0] += gain;
+			G.setQuick(indexFour, indexTwo, val);
 		}
-		
-		/*
-		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id);
-		G.print();
-		B.print();
-		*/
 	}
 	
 	@Override

@@ -1,6 +1,6 @@
 import java.util.List;
-
-import org.ejml.data.CDenseMatrix64F;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix1D;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix2D;
 
 public class MutualInductance implements Component {
 
@@ -31,39 +31,66 @@ public class MutualInductance implements Component {
 	}
 	
 	@Override
-	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
+	public void insertStamp(SparseDComplexMatrix2D G, SparseDComplexMatrix1D X, SparseDComplexMatrix2D C, SparseDComplexMatrix1D B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
 		int indexThree = nodeThree-1;
 		int indexFour = nodeFour-1;
+		double[] val = new double[2];
 		if(!(nodeOne == 0)){
-			G.setReal(indexOne, newIndexOne, G.getReal(indexOne, newIndexOne) + 1);
-			G.setReal(newIndexOne, indexOne, G.getReal(newIndexOne, indexOne) + 1);
+			val = G.getQuick(indexOne, newIndexOne);
+			val[0] += 1;
+			G.setQuick(indexOne, newIndexOne, val);
+			
+			val = G.getQuick(newIndexOne, indexOne);
+			val[0] += 1;
+			G.setQuick(newIndexOne, indexOne, val);
 		}
 		if(!(nodeThree == 0)){
-			G.setReal(indexThree, newIndexOne, G.getReal(indexThree, newIndexOne) + 1);
-			G.setReal(newIndexOne, indexThree, G.getReal(newIndexOne, indexThree) + 1);
+			val = G.getQuick(indexThree, newIndexOne);
+			val[0] += 1;
+			G.setQuick(indexThree, newIndexOne, val);
+			
+			val = G.getQuick(newIndexOne, indexThree);
+			val[0] += 1;
+			G.setQuick(newIndexOne, indexThree, val);
 		}
 		if(!(nodeTwo == 0)){
-			G.setReal(indexTwo, newIndexOne, G.getReal(indexTwo, newIndexOne) - 1);
-			G.setReal(newIndexOne, indexTwo, G.getReal(newIndexOne, indexTwo) - 1);
+			val = G.getQuick(indexTwo, newIndexOne);
+			val[0] -= 1;
+			G.setQuick(indexTwo, newIndexOne, val);
+			
+			val = G.getQuick(newIndexOne, indexTwo);
+			val[0] -= 1;
+			G.setQuick(newIndexOne, indexTwo, val);
 		}
 		if(!(nodeFour == 0)){
-			G.setReal(indexFour, newIndexOne, G.getReal(indexFour, newIndexOne) - 1);
-			G.setReal(newIndexOne, indexFour, G.getReal(newIndexOne, indexFour) - 1);
+			val = G.getQuick(indexFour, newIndexOne);
+			val[0] -= 1;
+			G.setQuick(indexFour, newIndexOne, val);
+			
+			val = G.getQuick(newIndexOne, indexFour);
+			val[0] -= 1;
+			G.setQuick(newIndexOne, indexFour, val);
 		}
-		C.setReal(newIndexOne, newIndexOne, C.getReal(newIndexOne, newIndexOne) - inductanceOne);
-		C.setReal(newIndexTwo, newIndexTwo, C.getReal(newIndexTwo, newIndexTwo) - inductanceTwo);
-		C.setReal(newIndexOne, newIndexTwo, C.getReal(newIndexOne, newIndexTwo) - inductanceCoupled);
-		C.setReal(newIndexTwo, newIndexOne, C.getReal(newIndexTwo, newIndexOne) - inductanceCoupled);
 		
-		/*
-		// show changes in G Matrix to debug
-		System.out.println("Inserted Element " + this.id);
-		G.print();
-		*/
+		val = C.getQuick(newIndexOne, newIndexOne);
+		val[0] -= inductanceOne;
+		C.setQuick(newIndexOne, newIndexOne, val);
+		
+		val = C.getQuick(newIndexTwo, newIndexTwo);
+		val[0] -= inductanceTwo;
+		C.setQuick(newIndexTwo, newIndexTwo, val);
+		
+		val = C.getQuick(newIndexOne, newIndexTwo);
+		val[0] -= inductanceCoupled;
+		C.setQuick(newIndexOne, newIndexTwo, val);
+		
+		val = C.getQuick(newIndexTwo, newIndexOne);
+		val[0] -= inductanceCoupled;
+		C.setQuick(newIndexTwo, newIndexOne, val);
 	}
 
 	@Override

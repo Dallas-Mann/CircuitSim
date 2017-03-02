@@ -1,6 +1,6 @@
 import java.util.List;
-
-import org.ejml.data.CDenseMatrix64F;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix1D;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix2D;
 
 public class Capacitor implements Component{
 	protected String id;
@@ -21,22 +21,38 @@ public class Capacitor implements Component{
 	}
 
 	@Override
-	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
+	public void insertStamp(SparseDComplexMatrix2D G, SparseDComplexMatrix1D X, SparseDComplexMatrix2D C, SparseDComplexMatrix1D B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
+		double[] val = new double[2];
 		if(nodeOne == 0){
-			C.setReal(indexTwo, indexTwo, C.getReal(indexTwo, indexTwo) + capacitance);
+			val = C.getQuick(indexTwo, indexTwo);
+			val[0] += capacitance;
+			C.setQuick(indexTwo, indexTwo, val);
 		}
 		else if(nodeTwo == 0){
-			C.setReal(indexOne, indexOne, C.getReal(indexOne, indexOne) + capacitance);
+			val = C.get(indexOne, indexOne);
+			val[0] += capacitance;
+			C.setQuick(indexOne, indexOne, val);
 		}
 		else{
-			C.setReal(indexOne, indexOne, C.getReal(indexOne, indexOne) + capacitance);
-			C.setReal(indexTwo, indexTwo, C.getReal(indexTwo, indexTwo) + capacitance);
-			C.setReal(indexOne, indexTwo, C.getReal(indexOne, indexTwo) - capacitance);
-			C.setReal(indexTwo, indexOne, C.getReal(indexTwo, indexOne) - capacitance);
+			val = C.get(indexOne, indexOne);
+			val[0] += capacitance;
+			C.setQuick(indexOne, indexOne, val);
+			
+			val = C.get(indexTwo, indexTwo);
+			val[0] += capacitance;
+			C.setQuick(indexTwo, indexTwo, val);
+			
+			val = C.get(indexOne, indexTwo);
+			val[0] -= capacitance;
+			C.setQuick(indexOne, indexTwo, val);
+			
+			val = C.get(indexTwo, indexOne);
+			val[0] -= capacitance;
+			C.setQuick(indexTwo, indexOne, val);
 		}
 	}
 

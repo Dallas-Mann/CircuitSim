@@ -1,6 +1,6 @@
 import java.util.List;
-
-import org.ejml.data.CDenseMatrix64F;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix1D;
+import cern.colt.matrix.tdcomplex.impl.SparseDComplexMatrix2D;
 
 public class Inductor implements Component{
 	protected String id;
@@ -21,20 +21,34 @@ public class Inductor implements Component{
 	}
 
 	@Override
-	public void insertStamp(CDenseMatrix64F G, CDenseMatrix64F X, CDenseMatrix64F C, CDenseMatrix64F B) {
+	public void insertStamp(SparseDComplexMatrix2D G, SparseDComplexMatrix1D X, SparseDComplexMatrix2D C, SparseDComplexMatrix1D B) {
 		// 0th node is ground node, and thus not implemented in our matrices
 		// because of this we need to offset all the matrix indices by -1
 		int indexOne = nodeOne-1;
 		int indexTwo = nodeTwo-1;
+		double[] val = new double[2];
 		if(!(nodeOne == 0)){
-			G.setReal(indexOne, newIndex, G.getReal(indexOne, newIndex) + 1);
-			G.setReal(newIndex, indexOne, G.getReal(newIndex, indexOne) + 1);
+			val = G.getQuick(indexOne, newIndex);
+			val[0] += 1;
+			G.setQuick(indexOne, newIndex, val);
+			
+			val = G.getQuick(newIndex, indexOne);
+			val[0] += 1;
+			G.setQuick(newIndex, indexOne, val);
 		}
 		if(!(nodeTwo == 0)){
-			G.setReal(indexTwo, newIndex, G.getReal(indexTwo, indexTwo) - 1);
-			G.setReal(newIndex, indexTwo, G.getReal(newIndex, indexTwo) - 1);
+			val = G.getQuick(indexTwo, newIndex);
+			val[0] -= 1;
+			G.setQuick(indexTwo, newIndex, val);
+			
+			val = G.getQuick(newIndex, indexTwo);
+			val[0] -= 1;
+			G.setQuick(newIndex, indexTwo, val);
 		}
-		C.setReal(newIndex, newIndex, C.getReal(newIndex, newIndex) - inductance);
+		
+		val = C.getQuick(newIndex, newIndex);
+		val[0] -= inductance;
+		C.setQuick(newIndex, newIndex, val);
 	}
 
 	@Override
